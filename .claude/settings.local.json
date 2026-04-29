@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(psql -d bookingapp -f schema.sql)",
+      "Bash(node *)",
+      "Bash(psql -d bookingapp -c \"SELECT COUNT\\(*\\) as states FROM states; SELECT COUNT\\(*\\) as cities FROM cities; SELECT COUNT\\(*\\) as users FROM users;\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(curl -s http://localhost:5001/api/health)",
+      "Bash(curl -s http://localhost:5001/api/states)",
+      "Bash(kill %1)",
+      "Bash(npx vite *)"
+    ]
+  }
+}
