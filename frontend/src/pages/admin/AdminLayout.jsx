@@ -1,13 +1,18 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Logo from '../../components/Logo';
 
 const NAV = [
-  { path: '/admin', label: 'Dashboard', icon: '📊', exact: true },
-  { path: '/admin/locations', label: 'Locations', icon: '🗺️' },
-  { path: '/admin/cars', label: 'Cars', icon: '🚗' },
-  { path: '/admin/houses', label: 'Houses', icon: '🏠' },
-  { path: '/admin/agents', label: 'Agents', icon: '🧭' },
-  { path: '/admin/bookings', label: 'Bookings', icon: '📅' },
+  { path: '/admin',                       label: 'Dashboard',          icon: '📊', exact: true },
+  { path: '/admin/bookings',             label: 'Bookings',            icon: '📅' },
+  { path: '/admin/locations',             label: 'Locations',          icon: '🗺️' },
+  { path: '/admin/cars',                  label: 'Cars',               icon: '🚗' },
+  { path: '/admin/houses',               label: 'Houses',              icon: '🏠' },
+  { path: '/admin/house-bookings',       label: 'House Bookings',      icon: '🛏️' },
+  { path: '/admin/agents',               label: 'Agents',              icon: '🧭', exact: true },
+  { path: '/admin/agent-bookings',       label: 'Agent Bookings',      icon: '📝' },
+  { path: '/admin/leasing',              label: 'Leasing',             icon: '🏡', exact: true },
+  { path: '/admin/leasing/applications', label: 'Lease Applications',  icon: '📋' },
 ];
 
 export default function AdminLayout({ children }) {
@@ -17,16 +22,23 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   const isActive = (path, exact) => exact ? pathname === path : pathname.startsWith(path);
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-logo">
-          Plan<span>WithUs</span>
+    <div className="admin-layout" style={{
+      backgroundImage: "url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920&q=80')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 0, pointerEvents: 'none' }} />
+      <aside className="admin-sidebar" style={{ position: 'relative', zIndex: 2, background: 'rgba(21,101,192,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+        <div className="admin-sidebar-logo" style={{ display: 'flex', alignItems: 'center' }}>
+          <Logo scale={0.72} variant="dark" />
         </div>
 
         {NAV.map(item => (
@@ -60,8 +72,11 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      <main className="admin-content">
-        {children}
+      <main className="admin-content" style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.10)', pointerEvents: 'none', zIndex: 0 }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -1,248 +1,158 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import PaymentForm from '../components/PaymentForm';
-import { useAuth } from '../context/AuthContext';
 import api, { API_URL } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const SLIDE_CSS = `
+  @keyframes slideshow-fadein { from{opacity:0} to{opacity:1} }
+  .hs-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:2; }
+  .hs-arrow:hover { background:rgba(0,0,0,0.68) !important; }
+  .hs-dot { width:6px; height:6px; border-radius:50%; cursor:pointer; transition:all 0.2s; flex-shrink:0; }
+`;
 
-const getDatesInRange = (start, end) => {
-  const dates = [];
-  let cur = new Date(start);
-  const last = new Date(end);
-  while (cur <= last) {
-    dates.push(cur.toISOString().split('T')[0]);
-    cur = new Date(cur);
-    cur.setDate(cur.getDate() + 1);
+function HouseSlideshow({ photos, name }) {
+  const [idx, setIdx]     = useState(0);
+  const timerRef          = useRef(null);
+  const hasMany           = photos.length > 1;
+
+  const resetTimer = () => {
+    clearInterval(timerRef.current);
+    if (hasMany) timerRef.current = setInterval(() => setIdx(i => (i + 1) % photos.length), 3000);
+  };
+
+  useEffect(() => { resetTimer(); return () => clearInterval(timerRef.current); }, [photos.length]);
+
+  const go = (e, newIdx) => { e.stopPropagation(); setIdx(newIdx); resetTimer(); };
+
+  if (photos.length === 0) {
+    return <div className="card-img-placeholder">🏠</div>;
   }
-  return dates;
-};
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+      <img
+        key={idx}
+        src={`${API_URL}/uploads/${photos[idx]}`}
+        alt={name}
+        className="card-img"
+        style={{ animation: 'slideshow-fadein 0.4s ease', display: 'block' }}
+      />
+      {hasMany && (
+        <>
+          <button className="hs-arrow" onClick={e => go(e, (idx - 1 + photos.length) % photos.length)} style={{ left: 8 }}>‹</button>
+          <button className="hs-arrow" onClick={e => go(e, (idx + 1) % photos.length)} style={{ right: 8 }}>›</button>
+          <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 2 }}>
+            {photos.map((_, i) => (
+              <div
+                key={i}
+                className="hs-dot"
+                onClick={e => go(e, i)}
+                style={{ background: i === idx ? 'white' : 'rgba(255,255,255,0.45)', transform: i === idx ? 'scale(1.35)' : 'scale(1)' }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function HouseBooking() {
   const { cityId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const [city, setCity] = useState(null);
-  const [dateRange, setDateRange] = useState(null);
-  const [houses, setHouses] = useState([]);
-  const [selectedHouse, setSelectedHouse] = useState(null);
-  const [blockedDates, setBlockedDates] = useState(new Set());
-  const [loadingHouses, setLoadingHouses] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
+  const navigate   = useNavigate();
+  const { user }   = useAuth();
+  const [houses, setHouses]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [city, setCity]       = useState(null);
 
   useEffect(() => {
-    api.get(`/api/cities/${cityId}`).then(r => setCity(r.data)).catch(() => navigate('/'));
+    api.get(`/api/cities/${cityId}`).then(r => setCity(r.data)).catch(() => {});
+    api.get(`/api/house-booking/houses/${cityId}`)
+      .then(r => setHouses(r.data))
+      .finally(() => setLoading(false));
   }, [cityId]);
 
-  const handleDateChange = async (range) => {
-    setDateRange(range);
-    setSelectedHouse(null);
-    setShowPayment(false);
-    if (!range || !range[0] || !range[1]) return;
-    const start = range[0].toISOString().split('T')[0];
-    const end = range[1].toISOString().split('T')[0];
-    setLoadingHouses(true);
-    try {
-      const { data } = await api.get(`/api/houses?cityId=${cityId}&startDate=${start}&endDate=${end}`);
-      setHouses(data);
-    } catch {
-      setHouses([]);
-    } finally {
-      setLoadingHouses(false);
-    }
+  const handleBook = (houseId) => {
+    if (!user) { navigate('/login'); return; }
+    navigate(`/house/book/${houseId}`);
   };
-
-  const handleSelectHouse = async (house) => {
-    setSelectedHouse(house);
-    setShowPayment(false);
-    try {
-      const { data } = await api.get(`/api/houses/${house.id}/blocked-dates`);
-      const blocked = new Set();
-      data.forEach(b => {
-        getDatesInRange(b.start_date, b.end_date).forEach(d => blocked.add(d));
-      });
-      setBlockedDates(blocked);
-    } catch { setBlockedDates(new Set()); }
-  };
-
-  const nights = dateRange?.[0] && dateRange?.[1]
-    ? Math.ceil((dateRange[1] - dateRange[0]) / (1000 * 60 * 60 * 24))
-    : 0;
-
-  const total = selectedHouse ? Number(selectedHouse.price_per_night) * nights : 0;
-
-  const bookingDetails = selectedHouse && dateRange ? {
-    bookingType: 'house',
-    itemId: selectedHouse.id,
-    startDate: dateRange[0].toISOString().split('T')[0],
-    endDate: dateRange[1].toISOString().split('T')[0],
-    totalPrice: total,
-  } : null;
-
-  const handlePaymentSuccess = () => {
-    navigate('/booking-success', { state: { type: 'house', item: selectedHouse, nights, total } });
-  };
-
-  const getPhotoUrl = (filename) => `${API_URL}/uploads/${filename}`;
-
-  if (!city) return <div className="loading"><div className="spinner" /></div>;
 
   return (
-    <div className="container">
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ color: '#6b6b6b', fontSize: 14, marginBottom: 4 }}>
-          <Link to="/">Home</Link> › <Link to={`/city/${cityId}`}>{city.name}</Link> › Book a House
-        </p>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#003580' }}>
-          🏠 Vacation Homes in {city.name}
-        </h1>
-        <p style={{ color: '#6b6b6b' }}>{city.state_name}</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
-        <div>
-          <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 20 }}>
-            <h3 style={{ fontWeight: 700, color: '#003580', marginBottom: 14 }}>Select Your Stay Dates</h3>
-            <Calendar
-              onChange={handleDateChange}
-              value={dateRange}
-              selectRange
-              minDate={new Date()}
-            />
-            {dateRange && (
-              <div style={{ marginTop: 12, color: '#00695c', fontWeight: 600, fontSize: 14 }}>
-                {nights} night{nights !== 1 ? 's' : ''} selected
-              </div>
-            )}
+    <div style={{
+      minHeight: '100vh',
+      backgroundImage: "url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920&q=80')",
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative',
+    }}>
+      <style>{SLIDE_CSS}</style>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.40)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="container">
+          <div style={{ marginBottom: 28 }}>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 4, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+              <Link to="/" style={{ color: 'rgba(255,255,255,0.85)' }}>Home</Link> ›{' '}
+              {city && <Link to={`/city/${cityId}`} style={{ color: 'rgba(255,255,255,0.85)' }}>{city.name}</Link>} › Houses
+            </p>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)', marginBottom: 4 }}>🏠 Houses in {city?.name}</h1>
+            <p style={{ color: 'rgba(255,255,255,0.85)', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+              {loading ? 'Loading...' : `${houses.length} propert${houses.length !== 1 ? 'ies' : 'y'} available`}
+            </p>
           </div>
 
-          {loadingHouses && <div className="loading"><div className="spinner" /><span>Searching available homes...</span></div>}
-
-          {!loadingHouses && dateRange && (
-            <>
-              <h3 style={{ fontWeight: 700, color: '#003580', marginBottom: 14 }}>
-                {houses.length > 0 ? `${houses.length} Home${houses.length !== 1 ? 's' : ''} Available` : 'No homes available for these dates'}
-              </h3>
-              <div className="grid">
-                {houses.map(house => (
-                  <div
-                    key={house.id}
-                    className="card"
-                    style={{
-                      cursor: 'pointer',
-                      border: selectedHouse?.id === house.id ? '2px solid #26a69a' : '2px solid transparent',
-                    }}
-                    onClick={() => handleSelectHouse(house)}
-                  >
-                    {house.photos?.[0] ? (
-                      <img src={getPhotoUrl(house.photos[0])} alt={house.name} className="card-img" onError={e => e.target.style.display='none'} />
-                    ) : (
-                      <div className="card-img-placeholder" style={{ background: 'linear-gradient(135deg, #00695c, #26a69a)' }}>🏠</div>
-                    )}
-                    <div className="card-body">
-                      <div className="card-title">{house.name}</div>
-                      <div style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 8 }}>{house.address}</div>
-                      <div className="card-tags">
-                        <span className="tag tag-green">🛏️ {house.rooms} rooms</span>
-                        <span className="tag tag-green">🚿 {house.bathrooms} baths</span>
-                      </div>
-                      <div className="card-price" style={{ color: '#00695c' }}>
-                        ${Number(house.price_per_night).toFixed(2)} <span>/ night</span>
-                      </div>
-                      {nights > 0 && (
-                        <div style={{ fontSize: 13, color: '#00695c', fontWeight: 600, marginBottom: 10 }}>
-                          Total: ${(Number(house.price_per_night) * nights).toFixed(2)} for {nights} nights
-                        </div>
-                      )}
-                      <button
-                        className={`btn btn-full ${selectedHouse?.id === house.id ? 'btn-accent' : 'btn-success'}`}
-                        onClick={e => { e.stopPropagation(); handleSelectHouse(house); }}
-                      >
-                        {selectedHouse?.id === house.id ? '✓ Selected' : 'Select This Home'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {!dateRange && (
+          {loading ? (
+            <div className="loading"><div className="spinner" /></div>
+          ) : houses.length === 0 ? (
             <div className="empty-state">
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
-              <h3>Pick your stay dates</h3>
-              <p>Select check-in and check-out dates to see available homes</p>
-            </div>
-          )}
-        </div>
-
-        <div style={{ position: 'sticky', top: 80 }}>
-          {selectedHouse ? (
-            <div className="booking-panel">
-              <h3>Booking Summary</h3>
-              <div style={{ marginBottom: 16 }}>
-                {selectedHouse.photos?.[0] ? (
-                  <img src={getPhotoUrl(selectedHouse.photos[0])} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 8 }} onError={e => e.target.style.display='none'} />
-                ) : (
-                  <div style={{ background: 'linear-gradient(135deg,#00695c,#26a69a)', height: 80, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>🏠</div>
-                )}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#003580', marginBottom: 4 }}>
-                {selectedHouse.name}
-              </div>
-              <div style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 16 }}>
-                {selectedHouse.rooms} rooms · {selectedHouse.bathrooms} baths
-              </div>
-
-              <div className="summary-box">
-                <div className="summary-row">
-                  <span>${Number(selectedHouse.price_per_night).toFixed(2)} × {nights} nights</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <div className="summary-row total">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {!user ? (
-                <div>
-                  <p style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 12, textAlign: 'center' }}>
-                    Please log in to complete your booking
-                  </p>
-                  <button className="btn btn-primary btn-full" onClick={() => navigate('/login')}>
-                    Login to Book
-                  </button>
-                </div>
-              ) : !showPayment ? (
-                <button className="btn btn-accent btn-full btn-lg" onClick={() => setShowPayment(true)}>
-                  Book Now — ${total.toFixed(2)}
-                </button>
-              ) : (
-                <Elements stripe={stripePromise}>
-                  <PaymentForm
-                    amount={total}
-                    bookingDetails={bookingDetails}
-                    onSuccess={handlePaymentSuccess}
-                  />
-                </Elements>
-              )}
+              <div style={{ fontSize: 56, marginBottom: 16 }}>🏠</div>
+              <h3>No houses available</h3>
+              <p>No properties are available in this city right now.</p>
             </div>
           ) : (
-            <div className="booking-panel" style={{ textAlign: 'center', padding: 32 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏠</div>
-              <h3 style={{ marginBottom: 8 }}>No home selected</h3>
-              <p style={{ fontSize: 13, color: '#6b6b6b' }}>
-                Select dates and choose a home to see pricing
-              </p>
+            <div className="grid">
+              {houses.map(house => <HouseCard key={house.id} house={house} onBook={handleBook} />)}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function HouseCard({ house, onBook }) {
+  const [hovered, setHovered] = useState(false);
+  const photos = house.photos || [];
+
+  return (
+    <div
+      className="card"
+      style={{ cursor: 'pointer', transform: hovered ? 'translateY(-4px)' : 'none', transition: 'transform 0.22s, box-shadow 0.22s', boxShadow: hovered ? '0 12px 40px rgba(21,101,192,0.2)' : '0 2px 12px rgba(21,101,192,0.08)' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <HouseSlideshow photos={photos} name={house.name} />
+
+      <div className="card-body">
+        <h3 className="card-title">{house.name}</h3>
+        <div style={{ fontSize: 13, color: '#777', marginBottom: 10 }}>{house.address}</div>
+
+        <div className="card-tags">
+          <span className="tag">🛏 {house.bedrooms || house.rooms || 1} bed</span>
+          <span className="tag">🚿 {house.bathrooms} bath</span>
+          <span className="tag">👥 {house.max_guests || 4} guests</span>
+          {house.pets_allowed && <span className="tag tag-green">🐾 Pets OK</span>}
+        </div>
+
+        <div className="card-price">
+          ${Number(house.price_per_night).toFixed(2)}
+          <span> / night</span>
+        </div>
+
+        <button
+          className="btn btn-full btn-lg"
+          style={{ background: '#F57C00', color: '#1565C0', fontWeight: 800, fontSize: 15 }}
+          onClick={() => onBook(house.id)}
+        >
+          Book Now →
+        </button>
       </div>
     </div>
   );

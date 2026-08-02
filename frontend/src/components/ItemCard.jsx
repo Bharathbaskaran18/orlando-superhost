@@ -35,7 +35,7 @@ export default function ItemCard({ item, type }) {
           )}
         </div>
         <div className="card-price">
-          ${Number(price).toFixed(0)}<span>{unit}</span>
+          ${Number(price).toFixed(2)}<span>{unit}</span>
         </div>
         {item.available ? (
           <Link to={`/book/${type}/${item.id}`} className="btn btn-primary btn-full">

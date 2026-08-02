@@ -94,9 +94,9 @@ export default function AdminLocations() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* States panel */}
         <div>
-          <div style={{ background: 'white', borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 12 }}>
+          <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 12, padding: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontWeight: 700, color: '#003580', fontSize: 16 }}>All 50 States</h3>
+              <h3 style={{ fontWeight: 700, color: '#0D2B6B', fontSize: 16 }}>All 50 States</h3>
               <span className="badge badge-enabled">{enabledCount} enabled</span>
             </div>
             <input
@@ -111,13 +111,13 @@ export default function AdminLocations() {
           {loading ? (
             <div className="loading"><div className="spinner" /></div>
           ) : (
-            <div style={{ maxHeight: 520, overflowY: 'auto', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <div style={{ maxHeight: 520, overflowY: 'auto', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
               {filteredStates.map(state => (
                 <div
                   key={state.id}
                   onClick={() => handleSelectState(state)}
                   style={{
-                    background: selectedState?.id === state.id ? '#e8f0fe' : 'white',
+                    background: selectedState?.id === state.id ? '#E3F2FD' : 'rgba(255,255,255,0.97)',
                     borderBottom: '1px solid #f5f5f5',
                     padding: '12px 16px',
                     display: 'flex',
@@ -129,7 +129,7 @@ export default function AdminLocations() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{
-                      background: '#003580', color: 'white', padding: '2px 7px',
+                      background: '#0D2B6B', color: 'white', padding: '2px 7px',
                       borderRadius: 4, fontSize: 11, fontWeight: 700,
                     }}>
                       {state.code}
@@ -160,8 +160,8 @@ export default function AdminLocations() {
         <div>
           {selectedState ? (
             <>
-              <div style={{ background: 'white', borderRadius: 12, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 12 }}>
-                <h3 style={{ fontWeight: 700, color: '#003580', fontSize: 16, marginBottom: 4 }}>
+              <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 12, padding: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 12 }}>
+                <h3 style={{ fontWeight: 700, color: '#0D2B6B', fontSize: 16, marginBottom: 4 }}>
                   Cities in {selectedState.name}
                 </h3>
                 <p style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 12 }}>
@@ -181,9 +181,9 @@ export default function AdminLocations() {
                 </form>
               </div>
 
-              <div style={{ maxHeight: 520, overflowY: 'auto', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <div style={{ maxHeight: 520, overflowY: 'auto', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
                 {cities.length === 0 ? (
-                  <div style={{ background: 'white', padding: 32, textAlign: 'center', color: '#6b6b6b', fontSize: 14, borderRadius: 12 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.97)', padding: 32, textAlign: 'center', color: '#6b6b6b', fontSize: 14, borderRadius: 12 }}>
                     No cities found for {selectedState.name}
                   </div>
                 ) : (
@@ -191,7 +191,7 @@ export default function AdminLocations() {
                     <div
                       key={city.id}
                       style={{
-                        background: 'white',
+                        background: 'rgba(255,255,255,0.97)',
                         borderBottom: '1px solid #f5f5f5',
                         padding: '11px 16px',
                         display: 'flex',
@@ -228,8 +228,8 @@ export default function AdminLocations() {
             </>
           ) : (
             <div style={{
-              background: 'white', borderRadius: 12, padding: 40,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center',
+              background: 'rgba(255,255,255,0.97)', borderRadius: 12, padding: 40,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)', textAlign: 'center',
               color: '#6b6b6b',
             }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>👈</div>

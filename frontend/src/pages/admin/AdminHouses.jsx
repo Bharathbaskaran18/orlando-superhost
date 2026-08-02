@@ -2,21 +2,54 @@ import { useState, useEffect } from 'react';
 import api, { API_URL } from '../../utils/api';
 import AdminLayout from './AdminLayout';
 
-const EMPTY_FORM = { cityId: '', name: '', address: '', rooms: 2, bathrooms: 1, pricePerNight: '', available: true };
+const DEFAULT_RULES = `No smoking inside the property
+No parties or events
+No pets unless pre-approved
+Quiet hours: 10 PM – 8 AM
+Please keep the property clean and tidy
+Report any damage immediately`;
+
+const DEFAULT_INSTRUCTIONS = `Check-in time: 3:00 PM
+Check-out time: 11:00 AM
+
+Key pickup: The key is in the lockbox on the front door. Code will be sent 24 hours before arrival.
+
+Parking: One space available in the driveway.
+
+WiFi: Network and password are on the refrigerator.
+
+For any issues, call us at: (407) 555-0100`;
+
+const EMPTY_FORM = {
+  cityId: '', stateId: '', name: '', address: '',
+  rooms: 2, bedrooms: 1, bathrooms: 1,
+  pricePerNight: '', depositAmount: '0',
+  maxGuests: 4, extraGuestFee: '0',
+  lateCheckoutFee: '25',
+  checkinTime: '15:00', checkoutTime: '11:00',
+  petsAllowed: false,
+  houseRules: DEFAULT_RULES,
+  checkinInstructions: DEFAULT_INSTRUCTIONS,
+  available: true,
+};
 
 export default function AdminHouses() {
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [houses, setHouses] = useState([]);
+  const [states, setStates]         = useState([]);
+  const [cities, setCities]         = useState([]);
+  const [houses, setHouses]         = useState([]);
   const [filterState, setFilterState] = useState('');
-  const [filterCity, setFilterCity] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [photos, setPhotos] = useState([]);
-  const [editId, setEditId] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [filterCity, setFilterCity]   = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [showModal, setShowModal]   = useState(false);
+  const [form, setForm]             = useState(EMPTY_FORM);
+  const [photos, setPhotos]         = useState([]);
+  const [editId, setEditId]         = useState(null);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteError, setDeleteError]   = useState('');
+  const [deleteSuccess, setDeleteSuccess] = useState('');
+  const [deleting, setDeleting]         = useState(false);
 
   useEffect(() => {
     api.get('/api/admin/states').then(r => setStates(r.data));
@@ -53,10 +86,42 @@ export default function AdminHouses() {
     setCities(data);
   };
 
-  const openAdd = () => { setForm(EMPTY_FORM); setPhotos([]); setEditId(null); setError(''); setShowModal(true); };
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const setCheck = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.checked }));
 
-  const openEdit = (h) => {
-    setForm({ cityId: h.city_id, name: h.name, address: h.address, rooms: h.rooms, bathrooms: h.bathrooms, pricePerNight: h.price_per_night, available: h.available });
+  const openAdd = () => {
+    setForm(EMPTY_FORM);
+    setPhotos([]);
+    setEditId(null);
+    setError('');
+    setShowModal(true);
+  };
+
+  const openEdit = async (h) => {
+    setForm({
+      cityId:              h.city_id,
+      stateId:             h.state_id || '',
+      name:                h.name,
+      address:             h.address,
+      rooms:               h.rooms,
+      bedrooms:            h.bedrooms || 1,
+      bathrooms:           h.bathrooms,
+      pricePerNight:       h.price_per_night,
+      depositAmount:       h.deposit_amount || '0',
+      maxGuests:           h.max_guests || 4,
+      extraGuestFee:       h.extra_guest_fee || '0',
+      lateCheckoutFee:     h.late_checkout_fee || '25',
+      checkinTime:         h.checkin_time ? String(h.checkin_time).slice(0, 5) : '15:00',
+      checkoutTime:        h.checkout_time ? String(h.checkout_time).slice(0, 5) : '11:00',
+      petsAllowed:         h.pets_allowed || false,
+      houseRules:          h.house_rules || DEFAULT_RULES,
+      checkinInstructions: h.checkin_instructions || DEFAULT_INSTRUCTIONS,
+      available:           h.available,
+    });
+    if (h.state_id) {
+      const { data } = await api.get(`/api/admin/cities?stateId=${h.state_id}`);
+      setCities(data);
+    }
     setPhotos([]);
     setEditId(h.id);
     setError('');
@@ -85,11 +150,34 @@ export default function AdminHouses() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this house?')) return;
-    await api.delete(`/api/admin/houses/${id}`);
-    loadHouses(filterCity);
+  const handleDelete = (id, name) => {
+    console.log('[Delete] Clicked delete for house:', id, name);
+    setDeleteTarget({ id, label: name });
+    setDeleteError('');
   };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    console.log('[Delete] Confirming delete for house id:', deleteTarget.id);
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.delete(`/api/admin/houses/${deleteTarget.id}`);
+      console.log('[Delete] House deleted successfully:', deleteTarget.id);
+      setHouses(prev => prev.filter(h => h.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setDeleteSuccess('House deleted successfully');
+      setTimeout(() => setDeleteSuccess(''), 4000);
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to delete house';
+      console.error('[Delete] Error:', msg);
+      setDeleteError(msg);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const ta = { ...({ width: '100%', borderRadius: 8, border: '1.5px solid #E0E0E0', fontSize: 13, fontFamily: 'inherit', padding: '10px 12px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }) };
 
   return (
     <AdminLayout>
@@ -97,6 +185,12 @@ export default function AdminHouses() {
         <h1 className="page-title">🏠 Houses</h1>
         <button className="btn btn-primary" onClick={openAdd}>+ Add House</button>
       </div>
+
+      {deleteSuccess && (
+        <div style={{ background: '#E8F5E9', border: '1px solid #A5D6A7', borderRadius: 8, padding: '10px 16px', marginBottom: 12, color: '#2E7D32', fontWeight: 600 }}>
+          {deleteSuccess}
+        </div>
+      )}
 
       <div className="filter-bar">
         <div className="form-group">
@@ -123,7 +217,7 @@ export default function AdminHouses() {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>House</th><th>City</th><th>Rooms / Baths</th><th>Price/Night</th><th>Status</th><th>Actions</th></tr>
+              <tr><th>House</th><th>City</th><th>Bed/Bath</th><th>Guests</th><th>Price/Night</th><th>Deposit</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {houses.map(h => (
@@ -133,7 +227,7 @@ export default function AdminHouses() {
                       {h.photos?.[0] ? (
                         <img src={`${API_URL}/uploads/${h.photos[0]}`} alt="" style={{ width: 50, height: 36, objectFit: 'cover', borderRadius: 4 }} onError={e => e.target.style.display='none'} />
                       ) : (
-                        <div style={{ width: 50, height: 36, background: '#e6f4ea', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏠</div>
+                        <div style={{ width: 50, height: 36, background: 'linear-gradient(135deg,#1565C0,#42A5F5)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏠</div>
                       )}
                       <div>
                         <div style={{ fontWeight: 700 }}>{h.name}</div>
@@ -142,77 +236,162 @@ export default function AdminHouses() {
                     </div>
                   </td>
                   <td>{h.city_name}<br /><span style={{ fontSize: 12, color: '#6b6b6b' }}>{h.state_name}</span></td>
-                  <td>{h.rooms} rooms · {h.bathrooms} baths</td>
+                  <td>{h.bedrooms || h.rooms} bed · {h.bathrooms} bath</td>
+                  <td>Up to {h.max_guests || 4}{h.pets_allowed ? ' · 🐾' : ''}</td>
                   <td style={{ fontWeight: 700 }}>${Number(h.price_per_night).toFixed(2)}</td>
+                  <td>${Number(h.deposit_amount || 0).toFixed(2)}</td>
                   <td><span className={`badge ${h.available ? 'badge-confirmed' : 'badge-cancelled'}`}>{h.available ? 'Active' : 'Inactive'}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => openEdit(h)}>Edit</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(h.id)}>Delete</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(h.id, h.name)}>Delete</button>
                     </div>
                   </td>
                 </tr>
               ))}
               {houses.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: '#6b6b6b', padding: 32 }}>No houses yet.</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: 'center', color: '#6b6b6b', padding: 32 }}>No houses yet.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
 
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => { setDeleteTarget(null); setDeleteError(''); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <h2>Delete House?</h2>
+            <p style={{ margin: '12px 0 20px' }}>
+              Are you sure you want to delete <strong>{deleteTarget.label}</strong>? This cannot be undone.
+            </p>
+            {deleteError && (
+              <div style={{ background: '#FFEBEE', border: '1px solid #FFCDD2', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#C62828', fontWeight: 600 }}>
+                {deleteError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => { setDeleteTarget(null); setDeleteError(''); }} disabled={deleting}>Cancel</button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                style={{ background: '#E53935', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, maxHeight: '90vh', overflowY: 'auto' }}>
             <h2>{editId ? 'Edit House' : 'Add House'}</h2>
             {error && <div className="form-error">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+                {/* Location */}
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>State *</label>
-                  <select value={form.stateId || ''} onChange={e => handleFormState(e.target.value)} required>
+                  <select value={form.stateId || ''} onChange={e => handleFormState(e.target.value)} required={!editId}>
                     <option value="">— Select State —</option>
                     {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>City *</label>
-                  <select value={form.cityId} onChange={e => setForm(f => ({ ...f, cityId: e.target.value }))} required>
+                  <select value={form.cityId} onChange={set('cityId')} required>
                     <option value="">— Select City —</option>
                     {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>House Name *</label>
-                  <input placeholder="Cozy Downtown Loft" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+                  <label>Property Name *</label>
+                  <input placeholder="Cozy Downtown Loft" value={form.name} onChange={set('name')} required />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>Address *</label>
-                  <input placeholder="123 Main St" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
+                  <input placeholder="123 Main St, Orlando, FL 32801" value={form.address} onChange={set('address')} required />
+                </div>
+
+                {/* Room Details */}
+                <div className="form-group">
+                  <label>Total Rooms</label>
+                  <input type="number" min="1" value={form.rooms} onChange={set('rooms')} required />
                 </div>
                 <div className="form-group">
-                  <label>Rooms *</label>
-                  <input type="number" min="1" value={form.rooms} onChange={e => setForm(f => ({ ...f, rooms: e.target.value }))} required />
+                  <label>Bedrooms</label>
+                  <input type="number" min="0" value={form.bedrooms} onChange={set('bedrooms')} />
                 </div>
                 <div className="form-group">
                   <label>Bathrooms *</label>
-                  <input type="number" min="1" value={form.bathrooms} onChange={e => setForm(f => ({ ...f, bathrooms: e.target.value }))} required />
+                  <input type="number" min="1" step="0.5" value={form.bathrooms} onChange={set('bathrooms')} required />
                 </div>
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                <div className="form-group">
+                  <label>Max Guests</label>
+                  <input type="number" min="1" value={form.maxGuests} onChange={set('maxGuests')} />
+                </div>
+
+                {/* Pricing */}
+                <div className="form-group">
                   <label>Price per Night ($) *</label>
-                  <input type="number" min="0" step="0.01" placeholder="149.99" value={form.pricePerNight} onChange={e => setForm(f => ({ ...f, pricePerNight: e.target.value }))} required />
+                  <input type="number" min="0" step="0.01" placeholder="149.99" value={form.pricePerNight} onChange={set('pricePerNight')} required />
                 </div>
+                <div className="form-group">
+                  <label>Deposit Amount ($)</label>
+                  <input type="number" min="0" step="0.01" placeholder="200.00" value={form.depositAmount} onChange={set('depositAmount')} />
+                </div>
+                <div className="form-group">
+                  <label>Extra Guest Fee ($/night)</label>
+                  <input type="number" min="0" step="0.01" placeholder="25.00" value={form.extraGuestFee} onChange={set('extraGuestFee')} />
+                </div>
+                <div className="form-group">
+                  <label>Late Checkout Fee ($/hr)</label>
+                  <input type="number" min="0" step="0.01" placeholder="25.00" value={form.lateCheckoutFee} onChange={set('lateCheckoutFee')} />
+                </div>
+
+                {/* Times */}
+                <div className="form-group">
+                  <label>Check-In Time</label>
+                  <input type="time" value={form.checkinTime} onChange={set('checkinTime')} />
+                </div>
+                <div className="form-group">
+                  <label>Check-Out Time</label>
+                  <input type="time" value={form.checkoutTime} onChange={set('checkoutTime')} />
+                </div>
+
+                {/* Photos */}
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label>Photos (up to 10)</label>
                   <input type="file" accept="image/*" multiple onChange={e => setPhotos(Array.from(e.target.files))} />
                   {photos.length > 0 && <span style={{ fontSize: 12, color: '#6b6b6b' }}>{photos.length} file(s) selected</span>}
                 </div>
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+
+                {/* Toggles */}
+                <div className="form-group">
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.available} onChange={e => setForm(f => ({ ...f, available: e.target.checked }))} />
-                    Available for booking
+                    <input type="checkbox" checked={form.petsAllowed} onChange={setCheck('petsAllowed')} />
+                    🐾 Pets Allowed
                   </label>
                 </div>
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.available} onChange={setCheck('available')} />
+                    Available for Booking
+                  </label>
+                </div>
+
+                {/* Text blocks */}
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label>House Rules</label>
+                  <textarea rows={6} value={form.houseRules} onChange={set('houseRules')} style={ta} />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label>Check-In Instructions</label>
+                  <textarea rows={6} value={form.checkinInstructions} onChange={set('checkinInstructions')} style={ta} />
+                </div>
+
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>

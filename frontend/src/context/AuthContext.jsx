@@ -8,13 +8,20 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('pwu_token');
-    const storedUser = localStorage.getItem('pwu_user');
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedToken = localStorage.getItem('pwu_token');
+      const storedUser = localStorage.getItem('pwu_user');
+      if (storedToken && storedUser) {
+        const parsed = JSON.parse(storedUser);
+        setToken(storedToken);
+        setUser(parsed);
+      }
+    } catch (e) {
+      localStorage.removeItem('pwu_token');
+      localStorage.removeItem('pwu_user');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (newToken, newUser) => {
@@ -31,8 +38,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUser = (updated) => {
+    const merged = { ...user, ...updated };
+    localStorage.setItem('pwu_user', JSON.stringify(merged));
+    setUser(merged);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

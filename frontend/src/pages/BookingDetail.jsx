@@ -75,6 +75,16 @@ export default function BookingDetail() {
   const unit = type === 'agent' ? '/hr' : '/day';
 
   return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundImage: "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1920&q=80')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1, animation: 'fadeIn 0.5s ease' }}>
     <div className="container">
       <div className="booking-detail">
         {/* Left: item info */}
@@ -103,7 +113,7 @@ export default function BookingDetail() {
         <div className="booking-panel">
           <h3>Book this {LABELS[type]}</h3>
           <div className="price-big">
-            ${pricePerUnit.toFixed(0)}<span>{unit}</span>
+            ${pricePerUnit.toFixed(2)}<span>{unit}</span>
           </div>
 
           {step === 'select' && (
@@ -122,7 +132,7 @@ export default function BookingDetail() {
               {days > 0 && (
                 <div className="summary-box">
                   <div className="summary-row">
-                    <span>${pricePerUnit.toFixed(0)} × {days} {days === 1 ? 'day' : 'days'}</span>
+                    <span>${pricePerUnit.toFixed(2)} × {days} {days === 1 ? 'day' : 'days'}</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
                   <div className="summary-row">
@@ -161,6 +171,8 @@ export default function BookingDetail() {
             </Elements>
           )}
         </div>
+      </div>
+    </div>
       </div>
     </div>
   );

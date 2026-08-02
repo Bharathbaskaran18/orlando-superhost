@@ -9,7 +9,26 @@
       "Bash(curl -s http://localhost:5001/api/health)",
       "Bash(curl -s http://localhost:5001/api/states)",
       "Bash(kill %1)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(psql *)",
+      "Bash(wait2)",
+      "Bash(curl -s \"http://localhost:5001/api/leasing/properties?cityId=1\")",
+      "Bash(curl -s \"http://localhost:5001/api/admin/leasing/properties\" -H \"Authorization: Bearer invalid\")",
+      "Bash(npm run *)",
+      "Bash(brew install *2)",
+      "Bash(brew install *)",
+      "Bash(pdftoppm -png -r 120 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf /tmp/pdf_page -f 1 -l 1)",
+      "Read(//private/tmp/**)",
+      "Bash(pdftoppm -png -r 120 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf /tmp/pdf_page -f 2 -l 2)",
+      "Bash(pdftoppm -png -r 120 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf /tmp/pdf_page13 -f 13 -l 13)",
+      "Bash(pdftotext -layout /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf -)",
+      "Bash(pdftotext -bbox /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf -)",
+      "Bash(grep -A5 \"Renter Name\\\\|Driver.*License No\\\\|License State\\\\|License Expiration\\\\|Date of Birth\\\\|Address\\\\|Phone\\\\|Email\\\\|Vehicle\\\\|Year.Make.Model\\\\|License Plate\\\\|VIN\\\\|Rental Start\\\\|Odometer\\\\|Designated Return\\\\|Fuel Level\\\\|Daily Rate\\\\|Mileage Cap\\\\|Overage Rate\\\\|Additional Driver\\\\|Deposit Held\\\\|Insurance Company\\\\|Policy No\\\\|Policy Expiration\\\\|Liability Limits\\\\|Covers Rental\\\\|Renter Signature\\\\|Print Name\\\\|Orlando Travels Inc\\\\.:$\")",
+      "Bash(pdftotext -bbox -f 13 -l 13 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf -)",
+      "Bash(grep -v \"^$\\\\|^<\\\\|^  <doc\\\\|^  <\\\\|^ <\")",
+      "Bash(pdftotext -bbox -f 1 -l 1 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf -)",
+      "Bash(pdftotext -bbox -f 2 -l 2 /Users/bharathb/booking-app/backend/src/rental-agreement-template.pdf -)",
+      "Bash(pdftoppm -png -r 120 /Users/bharathb/booking-app/backend/uploads/rental-agreement-998.pdf /tmp/test_filled -f 1 -l 2)"
     ]
   }
 }
