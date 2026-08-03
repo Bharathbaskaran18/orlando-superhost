@@ -27,6 +27,7 @@ app.use('/api/admin', require('./routes/adminHouseBookings'));
 app.use('/api/agent-booking', require('./routes/agentBooking'));
 app.use('/api/admin', require('./routes/adminAgentBookings'));
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Orlando Superhost' }));
 
 const PORT = process.env.PORT || 5001;
