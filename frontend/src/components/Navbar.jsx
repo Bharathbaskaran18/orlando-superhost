@@ -4,15 +4,18 @@ import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
-  const [scrolled, setScrolled]       = useState(false);
-  const [visible, setVisible]         = useState(true);
+  const [scrolled, setScrolled]         = useState(false);
+  const [visible, setVisible]           = useState(true);
   const [bookingsOpen, setBookingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen]   = useState(false);
   const lastY      = useRef(0);
   const dropRef    = useRef(null);
+  const profileRef = useRef(null);
 
   // scroll hide/show + transparency on home page
   useEffect(() => {
@@ -27,17 +30,27 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [isHomePage]);
 
-  // close dropdown when clicking outside
+  // close dropdowns when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (dropRef.current && !dropRef.current.contains(e.target)) setBookingsOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // close dropdown on navigation
-  useEffect(() => { setBookingsOpen(false); }, [location.pathname]);
+  // close dropdowns on Escape
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') { setBookingsOpen(false); setProfileOpen(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // close dropdowns on navigation
+  useEffect(() => { setBookingsOpen(false); setProfileOpen(false); }, [location.pathname]);
 
   const navBg  = isHomePage && !scrolled ? 'rgba(21,101,192,0.82)' : '#1565C0';
   const navBlur = isHomePage && !scrolled;
@@ -71,6 +84,10 @@ export default function Navbar() {
         .nb-drop-item:hover {
           background: #E3F2FD !important;
           color: #1565C0 !important;
+        }
+        .nb-drop-item.nb-logout:hover {
+          background: #FFEBEE !important;
+          color: #c62828 !important;
         }
       `}</style>
 
@@ -157,39 +174,77 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* Profile pill */}
-              <Link
-                to="/profile"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  textDecoration: 'none',
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1.5px solid rgba(255,255,255,0.2)',
-                  borderRadius: 50,
-                  padding: '5px 14px 5px 5px',
-                  transition: 'background 0.15s, border-color 0.15s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                }}
-              >
+              {/* Profile pill + dropdown */}
+              <div ref={profileRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setProfileOpen(o => !o)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: profileOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.1)',
+                    border: `1.5px solid ${profileOpen ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)'}`,
+                    borderRadius: 50,
+                    padding: '5px 12px 5px 5px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'background 0.15s, border-color 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.18)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!profileOpen) {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                    }
+                  }}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: '#F57C00',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 800, color: 'white', flexShrink: 0,
+                  }}>
+                    {initial}
+                  </div>
+                  <span style={{ color: 'white', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
+                    {firstName}
+                  </span>
+                  <span style={{
+                    fontSize: 9, color: 'rgba(255,255,255,0.75)',
+                    display: 'inline-block',
+                    transition: 'transform 0.2s ease',
+                    transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}>▼</span>
+                </button>
+
+                {/* Profile dropdown */}
                 <div style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: '#F57C00',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 800, color: 'white', flexShrink: 0,
+                  position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                  background: '#ffffff', borderRadius: 12,
+                  border: '1px solid #e0e0e0',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                  minWidth: 170, zIndex: 9999,
+                  overflow: 'hidden',
+                  opacity: profileOpen ? 1 : 0,
+                  transform: profileOpen ? 'translateY(0) scale(1)' : 'translateY(-6px) scale(0.97)',
+                  pointerEvents: profileOpen ? 'auto' : 'none',
+                  transition: 'opacity 0.18s ease, transform 0.18s ease',
+                  transformOrigin: 'top right',
                 }}>
-                  {initial}
+                  <Link to="/profile" className="nb-drop-item" onClick={() => setProfileOpen(false)}>
+                    <span>👤</span> My Profile
+                  </Link>
+                  <div style={{ height: 1, background: '#f0f0f0', margin: '0 12px' }} />
+                  <button
+                    className="nb-drop-item nb-logout"
+                    style={{ width: '100%', border: 'none', textAlign: 'left', cursor: 'pointer', color: '#c62828' }}
+                    onClick={() => { setProfileOpen(false); logout(); navigate('/'); }}
+                  >
+                    <span>🚪</span> Logout
+                  </button>
                 </div>
-                <span style={{ color: 'white', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
-                  {firstName}
-                </span>
-              </Link>
+              </div>
             </>
           ) : isHomePage ? (
             <>
