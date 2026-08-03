@@ -32,8 +32,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Orlando Supe
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, async () => {
-  console.log(`Orlando Superhost server running on http://localhost:${PORT}`);
-  console.log('Stripe configured:', !!process.env.STRIPE_SECRET_KEY);
+  console.log(`Orlando Superhost server running on port ${PORT}`);
+  console.log('Stripe key exists:', !!process.env.STRIPE_SECRET_KEY);
+  console.log('Stripe key prefix:', process.env.STRIPE_SECRET_KEY?.substring(0, 12));
   await verifySmtpConnection();
   startAgreementTimerJob();
   startHouseCheckinJob();
