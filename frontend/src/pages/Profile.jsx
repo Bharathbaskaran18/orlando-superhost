@@ -61,7 +61,14 @@ export default function Profile() {
       setStats(s.data);
       setCards(c.data);
       setTimeout(() => setLoaded(true), 60);
-    }).catch(() => navigate('/login'));
+    }).catch((err) => {
+      if (err?.response?.status === 401) {
+        logout();
+        navigate('/login');
+      } else {
+        setTimeout(() => setLoaded(true), 60);
+      }
+    });
   }, []);
 
   const handleLogout = () => { logout(); navigate('/'); };
