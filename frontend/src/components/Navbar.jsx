@@ -232,14 +232,18 @@ export default function Navbar() {
                   transition: 'opacity 0.18s ease, transform 0.18s ease',
                   transformOrigin: 'top right',
                 }}>
-                  <Link to="/profile" className="nb-drop-item" onClick={() => setProfileOpen(false)}>
+                  <Link
+                    to="/profile"
+                    className="nb-drop-item"
+                    onClick={e => { e.stopPropagation(); setProfileOpen(false); }}
+                  >
                     <span>👤</span> My Profile
                   </Link>
                   <div style={{ height: 1, background: '#f0f0f0', margin: '0 12px' }} />
                   <button
                     className="nb-drop-item nb-logout"
                     style={{ width: '100%', border: 'none', textAlign: 'left', cursor: 'pointer', color: '#c62828' }}
-                    onClick={() => { setProfileOpen(false); logout(); navigate('/'); }}
+                    onClick={e => { e.stopPropagation(); setProfileOpen(false); logout(); navigate('/'); }}
                   >
                     <span>🚪</span> Logout
                   </button>
