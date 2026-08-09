@@ -3,13 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import api, { API_URL } from '../../utils/api';
 
 const STATUS_CONFIG = {
-  pending_approval:        { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176' },
-  approved:                { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB' },
-  checked_in:              { label: 'Checked In',       bg: '#FFF3E0', color: '#E65100', border: '#FFCC80' },
-  completed:               { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
-  completed_with_charges:  { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
-  completed_extra_charged: { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
-  cancelled:               { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2' },
+  payment_pending:  { label: 'Payment Pending', bg: '#F5F5F5', color: '#555',    border: '#E0E0E0' },
+  pending_approval: { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176' },
+  approved:         { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB' },
+  active:           { label: 'Active Lease',     bg: '#FFF3E0', color: '#E65100', border: '#FFCC80' },
+  completed:        { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
+  cancelled:        { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2' },
 };
 
 function StatusBadge({ status }) {
@@ -46,15 +45,15 @@ export default function MyHouseBookings() {
         <div style={{ marginBottom: 8 }}>
           <Link to="/" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textDecoration: 'none' }}>← Home</Link>
         </div>
-        <h1 style={{ color: 'white', fontSize: 26, fontWeight: 800, marginBottom: 24 }}>🏠 My House Stays</h1>
+        <h1 style={{ color: 'white', fontSize: 26, fontWeight: 800, marginBottom: 24 }}>🏠 My House Leases</h1>
 
         {loading ? (
           <div className="loading"><div className="spinner" /></div>
         ) : bookings.length === 0 ? (
           <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 48, textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
             <div style={{ fontSize: 52, marginBottom: 16 }}>🏠</div>
-            <h3 style={{ color: '#1565C0', marginBottom: 8 }}>No house bookings yet</h3>
-            <p style={{ color: '#666', marginBottom: 20 }}>Book a house to see your stays here.</p>
+            <h3 style={{ color: '#1565C0', marginBottom: 8 }}>No house leases yet</h3>
+            <p style={{ color: '#666', marginBottom: 20 }}>Book a house to see your leases here.</p>
             <Link to="/" style={{ display: 'inline-block', background: '#F57C00', color: '#1565C0', padding: '10px 24px', borderRadius: 10, fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>
               Browse Houses
             </Link>
@@ -91,14 +90,14 @@ export default function MyHouseBookings() {
                       <StatusBadge status={b.status} />
                     </div>
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#555' }}>
-                      <span>📅 {fmtDate(b.checkin_date)} → {fmtDate(b.checkout_date)}</span>
-                      <span>🌙 {b.total_nights} night{b.total_nights !== 1 ? 's' : ''}</span>
-                      <span>👥 {b.num_guests} guest{b.num_guests !== 1 ? 's' : ''}</span>
+                      <span>📅 {fmtDate(b.move_in_date)} → {fmtDate(b.move_out_date)}</span>
+                      <span>🗓 {b.total_months} month{b.total_months !== 1 ? 's' : ''}</span>
+                      <span>💳 ${Number(b.monthly_rent || 0).toFixed(2)}/mo</span>
                     </div>
                   </div>
                   <div style={{ padding: '16px', textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#1565C0' }}>${Number(b.total_amount).toFixed(2)}</div>
-                    <div style={{ fontSize: 11, color: '#888' }}>total</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>paid today</div>
                     <div style={{ marginTop: 8, fontSize: 12, color: '#1565C0', fontWeight: 600 }}>View →</div>
                   </div>
                 </div>

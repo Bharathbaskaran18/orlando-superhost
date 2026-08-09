@@ -291,27 +291,22 @@ router.get('/houses', async (req, res) => {
 });
 
 router.post('/houses', upload.array('photos', 10), async (req, res) => {
-  const { cityId, name, address, rooms, bedrooms, bathrooms, pricePerNight,
-    depositAmount, maxGuests, extraGuestFee, lateCheckoutFee,
-    checkinTime, checkoutTime, petsAllowed, houseRules, checkinInstructions } = req.body;
-  if (!cityId || !name || !address || !rooms || !bathrooms || !pricePerNight) {
-    return res.status(400).json({ error: 'Required: cityId, name, address, rooms, bathrooms, pricePerNight' });
+  const { cityId, name, address, rooms, bedrooms, bathrooms, pricePerMonth,
+    depositAmount, minRentalMonths, maxRentalMonths } = req.body;
+  if (!cityId || !name || !address || !rooms || !bathrooms || !pricePerMonth) {
+    return res.status(400).json({ error: 'Required: cityId, name, address, rooms, bathrooms, pricePerMonth' });
   }
   const photos = req.files ? req.files.map(f => f.filename) : [];
   const toNum = (v) => (v !== '' && v != null ? Math.round(parseFloat(v) * 100) / 100 : null);
   const toInt = (v) => (v !== '' && v != null ? parseInt(v) : null);
   try {
     const result = await db.query(
-      `INSERT INTO houses (city_id, name, address, rooms, bedrooms, bathrooms, price_per_night, photos,
-         deposit_amount, max_guests, extra_guest_fee, late_checkout_fee,
-         checkin_time, checkout_time, pets_allowed, house_rules, checkin_instructions)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
+      `INSERT INTO houses (city_id, name, address, rooms, bedrooms, bathrooms, price_per_month, photos,
+         deposit_amount, min_rental_months, max_rental_months)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [cityId, name, address, parseInt(rooms), toInt(bedrooms) || 1, parseInt(bathrooms),
-       Math.round(parseFloat(pricePerNight) * 100) / 100, photos,
-       toNum(depositAmount) || 0, toInt(maxGuests) || 4, toNum(extraGuestFee) || 0,
-       toNum(lateCheckoutFee) || 25, checkinTime || '15:00', checkoutTime || '11:00',
-       petsAllowed === 'true' || petsAllowed === true,
-       houseRules || null, checkinInstructions || null]
+       Math.round(parseFloat(pricePerMonth) * 100) / 100, photos,
+       toNum(depositAmount) || 0, toInt(minRentalMonths) || 1, toInt(maxRentalMonths) || 12]
     );
     await db.query('UPDATE cities SET enabled = true WHERE id = $1', [cityId]);
     await db.query('UPDATE states SET enabled = true WHERE id = (SELECT state_id FROM cities WHERE id = $1)', [cityId]);
@@ -322,9 +317,8 @@ router.post('/houses', upload.array('photos', 10), async (req, res) => {
 });
 
 router.put('/houses/:id', upload.array('photos', 10), async (req, res) => {
-  const { name, address, rooms, bedrooms, bathrooms, pricePerNight, available, clearPhotos,
-    depositAmount, maxGuests, extraGuestFee, lateCheckoutFee,
-    checkinTime, checkoutTime, petsAllowed, houseRules, checkinInstructions } = req.body;
+  const { name, address, rooms, bedrooms, bathrooms, pricePerMonth, available, clearPhotos,
+    depositAmount, minRentalMonths, maxRentalMonths } = req.body;
   const toNum = (v) => (v !== '' && v != null ? Math.round(parseFloat(v) * 100) / 100 : null);
   const toInt = (v) => (v !== '' && v != null ? parseInt(v) : null);
   try {
@@ -335,16 +329,12 @@ router.put('/houses/:id', upload.array('photos', 10), async (req, res) => {
     const photos = [...existingPhotos, ...newPhotos];
     const result = await db.query(
       `UPDATE houses SET name=$1, address=$2, rooms=$3, bedrooms=$4, bathrooms=$5,
-         price_per_night=$6, photos=$7, available=$8,
-         deposit_amount=$9, max_guests=$10, extra_guest_fee=$11, late_checkout_fee=$12,
-         checkin_time=$13, checkout_time=$14, pets_allowed=$15, house_rules=$16, checkin_instructions=$17
-       WHERE id=$18 RETURNING *`,
+         price_per_month=$6, photos=$7, available=$8,
+         deposit_amount=$9, min_rental_months=$10, max_rental_months=$11
+       WHERE id=$12 RETURNING *`,
       [name, address, parseInt(rooms), toInt(bedrooms) || 1, parseInt(bathrooms),
-       Math.round(parseFloat(pricePerNight) * 100) / 100, photos, available !== 'false',
-       toNum(depositAmount) || 0, toInt(maxGuests) || 4, toNum(extraGuestFee) || 0,
-       toNum(lateCheckoutFee) || 25, checkinTime || '15:00', checkoutTime || '11:00',
-       petsAllowed === 'true' || petsAllowed === true,
-       houseRules || null, checkinInstructions || null,
+       Math.round(parseFloat(pricePerMonth) * 100) / 100, photos, available !== 'false',
+       toNum(depositAmount) || 0, toInt(minRentalMonths) || 1, toInt(maxRentalMonths) || 12,
        req.params.id]
     );
     res.json(result.rows[0]);
@@ -357,7 +347,7 @@ router.delete('/houses/:id', async (req, res) => {
   try {
     const active = await db.query(
       `SELECT id FROM house_bookings
-       WHERE house_id = $1 AND status NOT IN ('cancelled','completed','completed_with_charges','completed_extra_charged')
+       WHERE house_id = $1 AND status NOT IN ('cancelled','completed')
        LIMIT 1`,
       [req.params.id]
     );

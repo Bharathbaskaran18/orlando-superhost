@@ -5,6 +5,7 @@ const path = require('path');
 const { verifySmtpConnection } = require('./utils/email');
 const { startAgreementTimerJob } = require('./jobs/agreementTimer');
 const { startHouseCheckinJob }   = require('./jobs/houseCheckinJob');
+const { startHousePaymentReminderJob } = require('./jobs/housePaymentReminderJob');
 
 const app = express();
 
@@ -38,4 +39,5 @@ app.listen(PORT, async () => {
   await verifySmtpConnection();
   startAgreementTimerJob();
   startHouseCheckinJob();
+  startHousePaymentReminderJob();
 });

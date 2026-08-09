@@ -137,13 +137,12 @@ function HouseCard({ house, onBook }) {
         <div className="card-tags">
           <span className="tag">🛏 {house.bedrooms || house.rooms || 1} bed</span>
           <span className="tag">🚿 {house.bathrooms} bath</span>
-          <span className="tag">👥 {house.max_guests || 4} guests</span>
-          {house.pets_allowed && <span className="tag tag-green">🐾 Pets OK</span>}
+          <span className="tag">📅 {house.min_rental_months}–{house.max_rental_months} mo</span>
         </div>
 
         <div className="card-price">
-          ${Number(house.price_per_night).toFixed(2)}
-          <span> / night</span>
+          ${Number(house.price_per_month || 0).toFixed(2)}
+          <span> / month</span>
         </div>
 
         <button

@@ -5,7 +5,7 @@ const STEP_CSS = `
 `;
 
 export function HouseStepBar({ currentStep = 1 }) {
-  const steps = ['Select Dates', 'Your Details', 'Payment'];
+  const steps = ['Move-In Details', 'Your Details', 'Payment'];
   return (
     <>
       <style>{STEP_CSS}</style>
@@ -65,13 +65,12 @@ export function HouseHeroCard({ house }) {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, color: '#666' }}>🛏 {house.bedrooms || house.rooms || 1} bed</span>
           <span style={{ fontSize: 12, color: '#666' }}>🚿 {house.bathrooms} bath</span>
-          <span style={{ fontSize: 12, color: '#666' }}>👥 up to {house.max_guests || 4} guests</span>
-          {house.pets_allowed && <span style={{ fontSize: 12, color: '#2E7D32', fontWeight: 600 }}>🐾 Pets OK</span>}
+          <span style={{ fontSize: 12, color: '#666' }}>📅 {house.min_rental_months}–{house.max_rental_months} mo</span>
         </div>
       </div>
       <div style={{ padding: '14px 16px', textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#1565C0' }}>${Number(house.price_per_night).toFixed(2)}</div>
-        <div style={{ fontSize: 11, color: '#777' }}>per night</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#1565C0' }}>${Number(house.price_per_month || 0).toFixed(2)}</div>
+        <div style={{ fontSize: 11, color: '#777' }}>per month</div>
       </div>
     </div>
   );

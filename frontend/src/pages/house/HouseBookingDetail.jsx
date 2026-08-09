@@ -3,25 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import api, { API_URL } from '../../utils/api';
 
 const STATUS_CONFIG = {
-  pending_approval:        { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176', icon: '⏳' },
-  approved:                { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB', icon: '✅' },
-  checked_in:              { label: 'Checked In',       bg: '#FFF3E0', color: '#E65100', border: '#FFCC80', icon: '🏠' },
-  completed:               { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7', icon: '✓' },
-  completed_with_charges:  { label: 'Completed (Charges)', bg: '#FFF8E1', color: '#F57C00', border: '#FFE082', icon: '⚠️' },
-  completed_extra_charged: { label: 'Extra Charge',     bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2', icon: '⚠️' },
-  cancelled:               { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2', icon: '✕' },
+  payment_pending:  { label: 'Payment Pending', bg: '#F5F5F5', color: '#555',    border: '#E0E0E0', icon: '💳' },
+  pending_approval: { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176', icon: '⏳' },
+  approved:         { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB', icon: '✅' },
+  active:           { label: 'Active Lease',     bg: '#FFF3E0', color: '#E65100', border: '#FFCC80', icon: '🏠' },
+  completed:        { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7', icon: '✓' },
+  cancelled:        { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2', icon: '✕' },
 };
 
 const fmtDate = (s) => {
   if (!s) return '—';
   const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
   return new Date(y, m-1, d, 12).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-};
-const fmtTime = (t) => {
-  if (!t) return '—';
-  const [h, m] = String(t).split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  return `${h === 0 ? 12 : h > 12 ? h - 12 : h}:${String(m).padStart(2, '0')} ${ampm}`;
 };
 
 function Row({ label, value }) {
@@ -62,22 +55,22 @@ export default function HouseBookingDetail() {
       <div style={{ position: 'relative', zIndex: 1, background: 'white', borderRadius: 16, padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>🏠</div>
         <h2 style={{ color: '#1565C0' }}>Booking not found</h2>
-        <Link to="/house/my-bookings" style={{ color: '#1565C0', fontWeight: 700 }}>← My Stays</Link>
+        <Link to="/house/my-bookings" style={{ color: '#1565C0', fontWeight: 700 }}>← My Leases</Link>
       </div>
     </div>
   );
 
   const cfg = STATUS_CONFIG[b.status] || { label: b.status, bg: '#F5F5F5', color: '#555', border: '#E0E0E0', icon: '?' };
   const photo = b.house_photos?.[0];
-  const isApproved = ['approved', 'checked_in', 'completed', 'completed_with_charges', 'completed_extra_charged'].includes(b.status);
-  const isCompleted = ['completed', 'completed_with_charges', 'completed_extra_charged'].includes(b.status);
+  const schedule = Array.isArray(b.payment_schedule) ? b.payment_schedule : (b.payment_schedule ? JSON.parse(b.payment_schedule) : []);
+  const isCompleted = b.status === 'completed';
 
   return (
     <div style={{ minHeight: '100vh', backgroundImage: "url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920&q=80')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative' }}>
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,20,0.65)', zIndex: 0, pointerEvents: 'none' }} />
       <div className="container" style={{ position: 'relative', zIndex: 1, paddingTop: 88, paddingBottom: 40, maxWidth: 780 }}>
         <div style={{ marginBottom: 16 }}>
-          <Link to="/house/my-bookings" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textDecoration: 'none' }}>← My House Stays</Link>
+          <Link to="/house/my-bookings" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textDecoration: 'none' }}>← My House Leases</Link>
         </div>
 
         {/* Header */}
@@ -100,50 +93,47 @@ export default function HouseBookingDetail() {
           </div>
         </div>
 
-        {/* Booking Details */}
-        <Section title="Booking Details">
-          <Row label="Check-In"  value={fmtDate(b.checkin_date)} />
-          <Row label="Check-Out" value={fmtDate(b.checkout_date)} />
-          <Row label="Nights"    value={`${b.total_nights} night${b.total_nights !== 1 ? 's' : ''}`} />
-          <Row label="Guests"    value={`${b.num_guests} guest${b.num_guests !== 1 ? 's' : ''}${b.pets ? ' · 🐾 Pets' : ''}`} />
-          {isApproved && b.checkin_time  && <Row label="Check-In Time"  value={fmtTime(b.checkin_time)} />}
-          {isApproved && b.checkout_time && <Row label="Check-Out Time" value={fmtTime(b.checkout_time)} />}
+        {/* Lease Details */}
+        <Section title="Lease Details">
+          <Row label="Move-In Date"  value={fmtDate(b.move_in_date)} />
+          <Row label="Move-Out Date" value={fmtDate(b.move_out_date)} />
+          <Row label="Rental Period" value={`${b.total_months} month${b.total_months !== 1 ? 's' : ''}`} />
+          <Row label="Monthly Payment" value={`$${Number(b.monthly_rent || 0).toFixed(2)}/month`} />
+          {b.next_payment_date && <Row label="Next Payment Due" value={fmtDate(b.next_payment_date)} />}
         </Section>
 
-        {/* Price Breakdown */}
-        <Section title="Price Breakdown">
-          <Row label={`${b.total_nights} nights × $${Number(b.price_per_night).toFixed(2)}/night`} value={`$${Number(b.rental_cost).toFixed(2)}`} />
-          {Number(b.extra_guest_fee_total) > 0 && <Row label="Extra Guest Fee" value={`$${Number(b.extra_guest_fee_total).toFixed(2)}`} />}
-          {Number(b.deposit_amount) > 0 && <Row label="Deposit (refundable)" value={`$${Number(b.deposit_amount).toFixed(2)}`} />}
+        {/* Payment Summary */}
+        <Section title="Payment Summary">
+          <Row label="First Month Rent" value={`$${Number(b.monthly_rent || 0).toFixed(2)}`} />
+          <Row label="Security Deposit (refundable)" value={`$${Number(b.deposit_amount || 0).toFixed(2)}`} />
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 0', fontSize: 18, fontWeight: 800, color: '#1565C0' }}>
-            <span>Total</span>
+            <span>Paid Today</span>
             <span>${Number(b.total_amount).toFixed(2)}</span>
           </div>
         </Section>
 
-        {/* Check-In Instructions (shown once approved) */}
-        {isApproved && b.checkin_instructions && (
-          <Section title="Check-In Instructions">
-            <div style={{ background: '#F0F7FF', borderLeft: '4px solid #1565C0', borderRadius: 8, padding: '14px 16px', fontSize: 14, color: '#333', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-              {b.checkin_instructions}
-            </div>
+        {/* Payment Schedule */}
+        {schedule.length > 0 && (
+          <Section title="Payment Schedule">
+            {schedule.map(m => (
+              <Row
+                key={m.monthNumber}
+                label={`Month ${m.monthNumber} — ${fmtDate(m.dueDate)}`}
+                value={m.status === 'paid' ? `✅ $${Number(m.amount).toFixed(2)} paid` : `$${Number(m.amount).toFixed(2)} due`}
+              />
+            ))}
           </Section>
         )}
 
-        {/* Checkout Summary (once completed) */}
+        {/* Deposit Settlement (once completed) */}
         {isCompleted && (
-          <Section title="Checkout Summary">
-            {b.actual_checkout_date && <Row label="Actual Checkout Date" value={fmtDate(b.actual_checkout_date)} />}
-            {b.actual_checkout_time && <Row label="Actual Checkout Time" value={fmtTime(b.actual_checkout_time)} />}
-            {b.property_condition   && <Row label="Property Condition"   value={b.property_condition} />}
-            {b.late_checkout_fee_charged > 0 && <Row label="Late Checkout Fee" value={`$${Number(b.late_checkout_fee_charged).toFixed(2)}`} />}
-            {b.actual_extra_guest_fee > 0    && <Row label="Extra Guest Fee"   value={`$${Number(b.actual_extra_guest_fee).toFixed(2)}`} />}
-            {b.damage_repair_cost > 0        && <Row label="Damage Repair"     value={`$${Number(b.damage_repair_cost).toFixed(2)}`} />}
-            {b.cleaning_fee > 0              && <Row label="Cleaning Fee"      value={`$${Number(b.cleaning_fee).toFixed(2)}`} />}
-            {b.damage_description && (
+          <Section title="Deposit Settlement">
+            {b.deposit_refund_status && <Row label="Refund Status" value={b.deposit_refund_status.charAt(0).toUpperCase() + b.deposit_refund_status.slice(1)} />}
+            {b.deposit_refund_amount != null && <Row label="Deposit Refunded" value={`$${Number(b.deposit_refund_amount).toFixed(2)}`} />}
+            {b.deposit_refund_notes && (
               <div style={{ marginTop: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 6 }}>DAMAGE NOTES</div>
-                <div style={{ background: '#FFF8E1', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#555' }}>{b.damage_description}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 6 }}>NOTES</div>
+                <div style={{ background: '#FFF8E1', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#555' }}>{b.deposit_refund_notes}</div>
               </div>
             )}
           </Section>
@@ -152,17 +142,17 @@ export default function HouseBookingDetail() {
         {/* What's Next */}
         {b.status === 'pending_approval' && (
           <div style={{ background: '#E3F2FD', borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#1565C0', fontWeight: 600 }}>
-            📋 Your booking is under review. You'll receive an email once it's approved (within 24 hours).
+            📋 Your lease is under review. You'll receive an email once it's approved (within 24 hours).
           </div>
         )}
         {b.status === 'approved' && (
           <div style={{ background: '#E8F5E9', borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#2E7D32', fontWeight: 600 }}>
-            ✅ Your booking is approved! Check-in instructions are shown above.
+            ✅ Your lease is approved! You'll be moved in automatically on {fmtDate(b.move_in_date)}.
           </div>
         )}
-        {b.status === 'checked_in' && (
+        {b.status === 'active' && (
           <div style={{ background: '#FFF3E0', borderRadius: 12, padding: '16px 20px', fontSize: 14, color: '#E65100', fontWeight: 600 }}>
-            🏠 You are currently checked in. Enjoy your stay!
+            🏠 You are currently moved in. Enjoy your stay!
           </div>
         )}
       </div>

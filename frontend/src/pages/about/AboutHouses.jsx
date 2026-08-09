@@ -6,7 +6,7 @@ const SECTION_BG = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000
 
 const FEATURES = [
   { icon: '🏠', title: 'Verified Properties', desc: 'Every home on our platform is reviewed and verified by our team for quality.' },
-  { icon: '📅', title: 'Calendar Availability', desc: 'Real-time availability calendar so you always see accurate open dates.' },
+  { icon: '📅', title: 'Flexible Lease Terms', desc: 'Choose a move-in date and rental duration that fits your needs, from a few months to a year or more.' },
   { icon: '🛏️', title: 'Multiple Room Types', desc: 'Studio apartments, family homes, beach cottages — find exactly what you need.' },
   { icon: '🔒', title: 'Secure Booking', desc: 'Your reservation is protected and confirmed with secure payment processing.' },
   { icon: '💰', title: 'Best Price Guarantee', desc: 'Transparent pricing with no surprise fees. The price you see is what you pay.' },
@@ -14,11 +14,11 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: '1', title: 'Browse Houses', desc: 'Explore verified vacation homes and properties in your destination city.' },
-  { num: '2', title: 'Pick Your Dates', desc: 'Select check-in and check-out dates using the real-time availability calendar.' },
-  { num: '3', title: 'Fill Your Details', desc: 'Provide guest information and any special requirements for your stay.' },
-  { num: '4', title: 'Pay Securely', desc: 'Complete your reservation with secure and encrypted payment.' },
-  { num: '5', title: 'Check In', desc: 'Receive your booking confirmation and check-in instructions. Enjoy your stay!' },
+  { num: '1', title: 'Browse Houses', desc: 'Explore verified rental homes and properties in your destination city.' },
+  { num: '2', title: 'Pick Your Move-In Date', desc: 'Choose your move-in date and rental duration — we calculate your move-out date automatically.' },
+  { num: '3', title: 'Fill Your Details', desc: 'Provide your information and any special requirements for your lease.' },
+  { num: '4', title: 'Pay Securely', desc: 'Pay your first month\'s rent plus security deposit with secure, encrypted payment.' },
+  { num: '5', title: 'Move In', desc: 'Receive your lease confirmation and move-in details, then pay monthly rent going forward.' },
 ];
 
 function FadeIn({ children, delay = 0 }) {

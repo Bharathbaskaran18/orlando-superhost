@@ -6,7 +6,6 @@ import api from '../../utils/api';
 import { HouseStepBar, HouseHeroCard } from './HouseHeroCard';
 import { pendingIdFile, clearPendingIdFile } from './houseBookingSession';
 
-console.log('Stripe key loaded:', !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : null;
@@ -49,7 +48,7 @@ function HouseCardInner({ state, houseId, idFile, total }) {
 
   useEffect(() => {
     if (countdown === null) return;
-    if (countdown <= 0) { navigate(`/house/${houseId}/dates`); return; }
+    if (countdown <= 0) { navigate(`/house/book/${houseId}`); return; }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [countdown, navigate, houseId]);
@@ -68,10 +67,8 @@ function HouseCardInner({ state, houseId, idFile, total }) {
       // Step 1: Create booking (status: payment_pending)
       const fd = new FormData();
       fd.append('houseId',           houseId);
-      fd.append('checkinDate',       state.checkin);
-      fd.append('checkoutDate',      state.checkout);
-      fd.append('numGuests',         state.numGuests);
-      fd.append('pets',              state.pets ? 'true' : 'false');
+      fd.append('moveInDate',        state.moveInDate);
+      fd.append('numMonths',         state.numMonths);
       fd.append('customerFirstName', state.firstName);
       fd.append('customerLastName',  state.lastName);
       fd.append('customerDob',       state.dob || '');
@@ -91,7 +88,7 @@ function HouseCardInner({ state, houseId, idFile, total }) {
       const piRes = await api.post(`/api/house-booking/bookings/${bookingId}/payment-intent`);
       const { clientSecret } = piRes.data;
 
-      // Step 3: Confirm card payment (manual capture → requires_capture)
+      // Step 3: Confirm & charge card
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardNumberEl,
@@ -111,8 +108,8 @@ function HouseCardInner({ state, houseId, idFile, total }) {
         return;
       }
 
-      if (!['requires_capture', 'succeeded'].includes(paymentIntent.status)) {
-        setPayError('Payment could not be authorized. Please try again.');
+      if (paymentIntent.status !== 'succeeded') {
+        setPayError('Payment could not be completed. Please try again.');
         setPaying(false);
         return;
       }
@@ -126,7 +123,7 @@ function HouseCardInner({ state, houseId, idFile, total }) {
       navigate(`/house/booking/${bookingId}`);
     } catch (err) {
       if (err.response?.status === 409) {
-        setPayError('These dates just got booked by someone else. Redirecting to dates…');
+        setPayError('This property just got booked by someone else. Redirecting…');
         setCountdown(5);
       } else {
         setPayError(err.response?.data?.error || 'Something went wrong. Please try again.');
@@ -237,7 +234,7 @@ function HouseCardInner({ state, houseId, idFile, total }) {
             Processing…
           </>
         ) : (
-          `Authorize $${total.toFixed(2)}`
+          `Pay $${total.toFixed(2)}`
         )}
       </button>
 
@@ -264,11 +261,10 @@ export default function HousePayment() {
     api.get(`/api/house-booking/house/${houseId}`).then(r => setHouse(r.data)).catch(() => {});
   }, [houseId]);
 
-  const idFile        = pendingIdFile;
-  const total         = Number(state.total || 0);
-  const rentalCost    = Number(state.rentalCost || 0);
-  const extraFeeTotal = Number(state.extraFeeTotal || 0);
-  const deposit       = Number(state.deposit || 0);
+  const idFile         = pendingIdFile;
+  const total           = Number(state.totalDueToday || 0);
+  const monthlyRent      = Number(state.monthlyRent || 0);
+  const deposit          = Number(state.deposit || 0);
 
   return (
     <div style={{ minHeight: '100vh', backgroundImage: "url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920&q=80')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative' }}>
@@ -281,32 +277,30 @@ export default function HousePayment() {
         <HouseStepBar currentStep={3} />
         <HouseHeroCard house={house} />
 
-        {/* Stay Summary */}
+        {/* Move-In Summary */}
         <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Stay Summary</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Move-In Summary</div>
 
           <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 14 }}>
-            <span>📅 {fmtDate(state.checkin)} → {fmtDate(state.checkout)}</span>
-            <span>🌙 {state.totalNights} night{state.totalNights !== 1 ? 's' : ''}</span>
-            <span>👥 {state.numGuests} guest{state.numGuests !== 1 ? 's' : ''}{state.pets ? ' · 🐾 Pets' : ''}</span>
+            <span>📅 Move in {fmtDate(state.moveInDate)} → Move out {fmtDate(state.moveOutDate)}</span>
+            <span>🗓 {state.numMonths} month{state.numMonths !== 1 ? 's' : ''}</span>
           </div>
 
-          <Row label={`${state.totalNights} night${state.totalNights !== 1 ? 's' : ''} × $${Number(state.pricePerNight || 0).toFixed(2)}/night`} value={`$${rentalCost.toFixed(2)}`} />
-          {extraFeeTotal > 0 && <Row label="Extra guest fee" value={`$${extraFeeTotal.toFixed(2)}`} />}
-          {deposit > 0 && <Row label="Deposit (refundable)" value={`$${deposit.toFixed(2)}`} />}
+          <Row label="First month rent" value={`$${monthlyRent.toFixed(2)}`} />
+          <Row label="Security deposit (refundable)" value={`$${deposit.toFixed(2)}`} />
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0 4px', fontSize: 20, fontWeight: 800, color: '#0D2B6B' }}>
-            <span>Total Due</span>
+            <span>Total Due Today</span>
             <span>${total.toFixed(2)}</span>
           </div>
 
           <div style={{ marginTop: 14, background: '#F0F7FF', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#555' }}>
-            🛡️ <strong>Cancellation policy:</strong> Deposits are refundable if cancelled 48+ hours before check-in.
+            💳 <strong>Remaining monthly payments:</strong> ${monthlyRent.toFixed(2)}/month for the rest of your lease.
           </div>
         </div>
 
         {/* Guest Info */}
         <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Guest Information</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Your Information</div>
           <Row label="Name"    value={`${state.firstName} ${state.lastName}`} />
           <Row label="Email"   value={state.email} />
           <Row label="Phone"   value={state.phone} />
@@ -329,7 +323,7 @@ export default function HousePayment() {
         <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Step 3 — Complete Payment</div>
           <p style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 20 }}>
-            Your booking will be pending admin approval after payment. Your card will be authorized now and charged after checkout.
+            You'll be charged today for the first month's rent + security deposit. Your lease will be pending admin approval after payment.
           </p>
 
           {stripePromise ? (

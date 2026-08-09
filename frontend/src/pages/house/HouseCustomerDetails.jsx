@@ -51,7 +51,6 @@ export default function HouseCustomerDetails() {
   });
   const [idFile, setIdFile]       = useState(null);
   const [idPreview, setIdPreview] = useState(null);
-  const [agreedRules, setAgreedRules]   = useState(false);
   const [agreedCancel, setAgreedCancel] = useState(false);
   const [errors, setErrors] = useState({});
   const fileRef = useRef();
@@ -73,7 +72,6 @@ export default function HouseCustomerDetails() {
     if (!form.address.trim()) e.address = 'Required';
     if (!form.idType) e.idType = 'Required';
     if (!idFile) e.idFile = 'ID photo required';
-    if (house?.house_rules && !agreedRules)  e.agreedRules  = 'Please agree to the house rules';
     if (!agreedCancel) e.agreedCancel = 'Please agree to the cancellation policy';
     return e;
   };
@@ -109,8 +107,6 @@ export default function HouseCustomerDetails() {
     });
   };
 
-  const lateCheckoutFee = house?.late_checkout_fee || 25;
-
   return (
     <div style={{ minHeight: '100vh', backgroundImage: "url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920&q=80')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative' }}>
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,20,0.65)', zIndex: 0, pointerEvents: 'none' }} />
@@ -122,11 +118,11 @@ export default function HouseCustomerDetails() {
         <HouseStepBar currentStep={2} />
         <HouseHeroCard house={house} />
 
-        {step1.checkin && (
+        {step1.moveInDate && (
           <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '12px 20px', marginBottom: 20, display: 'flex', gap: 24, flexWrap: 'wrap', color: 'white', fontSize: 14 }}>
-            <span>📅 {fmtDate(step1.checkin)} → {fmtDate(step1.checkout)} ({step1.totalNights} nights)</span>
-            <span>👥 {step1.numGuests} guest{step1.numGuests !== 1 ? 's' : ''}{step1.pets ? ' · 🐾 Pets' : ''}</span>
-            <span style={{ fontWeight: 700 }}>Total: ${Number(step1.total || 0).toFixed(2)}</span>
+            <span>📅 Move in {fmtDate(step1.moveInDate)} → Move out {fmtDate(step1.moveOutDate)}</span>
+            <span>🗓 {step1.numMonths} month{step1.numMonths !== 1 ? 's' : ''}</span>
+            <span style={{ fontWeight: 700 }}>Due Today: ${Number(step1.totalDueToday || 0).toFixed(2)}</span>
           </div>
         )}
 
@@ -156,14 +152,11 @@ export default function HouseCustomerDetails() {
             </Field>
           </div>
 
-          {/* Trip Details */}
+          {/* Lease Details */}
           <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
-            <div style={SECTION}>Trip Details</div>
-            <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '12px 16px', marginBottom: 14, fontSize: 14, color: '#555' }}>
-              <span style={{ fontWeight: 600, color: '#1565C0' }}>Guests: </span>{step1.numGuests}{step1.pets ? ' · 🐾 Bringing pets' : ''}
-            </div>
+            <div style={SECTION}>Lease Details</div>
             <Field label="Special Requests (optional)">
-              <textarea value={form.specialRequests} onChange={set('specialRequests')} rows={3} style={{ ...inp(false), resize: 'vertical', minHeight: 80 }} placeholder="Any special requests for your stay..." />
+              <textarea value={form.specialRequests} onChange={set('specialRequests')} rows={3} style={{ ...inp(false), resize: 'vertical', minHeight: 80 }} placeholder="Any special requests for your lease..." />
             </Field>
           </div>
 
@@ -194,29 +187,13 @@ export default function HouseCustomerDetails() {
             </Field>
           </div>
 
-          {/* House Rules */}
-          {house?.house_rules && (
-            <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
-              <div style={SECTION}>House Rules</div>
-              <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '14px 16px', fontSize: 13, color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.8, marginBottom: 14 }}>
-                {house.house_rules}
-              </div>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 14 }}>
-                <input type="checkbox" checked={agreedRules} onChange={e => setAgreedRules(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18 }} />
-                <span>I have read and agree to the house rules</span>
-              </label>
-              {errors.agreedRules && <div style={{ marginTop: 6, fontSize: 12, color: '#C62828' }}>⚠ {errors.agreedRules}</div>}
-            </div>
-          )}
-
           {/* Cancellation Policy */}
           <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
             <div style={SECTION}>Cancellation Policy</div>
             <div style={{ background: '#FFF8E1', borderLeft: '4px solid #F57C00', borderRadius: 8, padding: '14px 16px', fontSize: 13, lineHeight: 1.9, marginBottom: 14 }}>
-              ✅ Cancel 24+ hours before check-in = Full refund<br />
-              ❌ Cancel less than 24 hours = No refund<br />
-              ❌ No-show = No refund<br />
-              ⏰ Late checkout = ${Number(lateCheckoutFee).toFixed(2)}/hr
+              ✅ Cancel 24+ hours before move-in = Full refund<br />
+              ❌ Cancel less than 24 hours before move-in = No refund<br />
+              🔒 Security deposit is refundable at move-out, subject to lease terms
             </div>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 14 }}>
               <input type="checkbox" checked={agreedCancel} onChange={e => setAgreedCancel(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18 }} />

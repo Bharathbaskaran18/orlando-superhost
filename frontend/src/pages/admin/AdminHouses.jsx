@@ -2,34 +2,11 @@ import { useState, useEffect } from 'react';
 import api, { API_URL } from '../../utils/api';
 import AdminLayout from './AdminLayout';
 
-const DEFAULT_RULES = `No smoking inside the property
-No parties or events
-No pets unless pre-approved
-Quiet hours: 10 PM – 8 AM
-Please keep the property clean and tidy
-Report any damage immediately`;
-
-const DEFAULT_INSTRUCTIONS = `Check-in time: 3:00 PM
-Check-out time: 11:00 AM
-
-Key pickup: The key is in the lockbox on the front door. Code will be sent 24 hours before arrival.
-
-Parking: One space available in the driveway.
-
-WiFi: Network and password are on the refrigerator.
-
-For any issues, call us at: (407) 555-0100`;
-
 const EMPTY_FORM = {
   cityId: '', stateId: '', name: '', address: '',
   rooms: 2, bedrooms: 1, bathrooms: 1,
-  pricePerNight: '', depositAmount: '0',
-  maxGuests: 4, extraGuestFee: '0',
-  lateCheckoutFee: '25',
-  checkinTime: '15:00', checkoutTime: '11:00',
-  petsAllowed: false,
-  houseRules: DEFAULT_RULES,
-  checkinInstructions: DEFAULT_INSTRUCTIONS,
+  pricePerMonth: '', depositAmount: '0',
+  minRentalMonths: '1', maxRentalMonths: '12',
   available: true,
 };
 
@@ -99,24 +76,18 @@ export default function AdminHouses() {
 
   const openEdit = async (h) => {
     setForm({
-      cityId:              h.city_id,
-      stateId:             h.state_id || '',
-      name:                h.name,
-      address:             h.address,
-      rooms:               h.rooms,
-      bedrooms:            h.bedrooms || 1,
-      bathrooms:           h.bathrooms,
-      pricePerNight:       h.price_per_night,
-      depositAmount:       h.deposit_amount || '0',
-      maxGuests:           h.max_guests || 4,
-      extraGuestFee:       h.extra_guest_fee || '0',
-      lateCheckoutFee:     h.late_checkout_fee || '25',
-      checkinTime:         h.checkin_time ? String(h.checkin_time).slice(0, 5) : '15:00',
-      checkoutTime:        h.checkout_time ? String(h.checkout_time).slice(0, 5) : '11:00',
-      petsAllowed:         h.pets_allowed || false,
-      houseRules:          h.house_rules || DEFAULT_RULES,
-      checkinInstructions: h.checkin_instructions || DEFAULT_INSTRUCTIONS,
-      available:           h.available,
+      cityId:           h.city_id,
+      stateId:          h.state_id || '',
+      name:             h.name,
+      address:          h.address,
+      rooms:            h.rooms,
+      bedrooms:         h.bedrooms || 1,
+      bathrooms:        h.bathrooms,
+      pricePerMonth:    h.price_per_month,
+      depositAmount:    h.deposit_amount || '0',
+      minRentalMonths:  h.min_rental_months || '1',
+      maxRentalMonths:  h.max_rental_months || '12',
+      available:        h.available,
     });
     if (h.state_id) {
       const { data } = await api.get(`/api/admin/cities?stateId=${h.state_id}`);
@@ -131,6 +102,10 @@ export default function AdminHouses() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (parseInt(form.minRentalMonths) > parseInt(form.maxRentalMonths)) {
+      setError('Minimum rental period cannot be greater than maximum rental period');
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -151,33 +126,26 @@ export default function AdminHouses() {
   };
 
   const handleDelete = (id, name) => {
-    console.log('[Delete] Clicked delete for house:', id, name);
     setDeleteTarget({ id, label: name });
     setDeleteError('');
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    console.log('[Delete] Confirming delete for house id:', deleteTarget.id);
     setDeleting(true);
     setDeleteError('');
     try {
       await api.delete(`/api/admin/houses/${deleteTarget.id}`);
-      console.log('[Delete] House deleted successfully:', deleteTarget.id);
       setHouses(prev => prev.filter(h => h.id !== deleteTarget.id));
       setDeleteTarget(null);
       setDeleteSuccess('House deleted successfully');
       setTimeout(() => setDeleteSuccess(''), 4000);
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to delete house';
-      console.error('[Delete] Error:', msg);
-      setDeleteError(msg);
+      setDeleteError(err.response?.data?.error || 'Failed to delete house');
     } finally {
       setDeleting(false);
     }
   };
-
-  const ta = { ...({ width: '100%', borderRadius: 8, border: '1.5px solid #E0E0E0', fontSize: 13, fontFamily: 'inherit', padding: '10px 12px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }) };
 
   return (
     <AdminLayout>
@@ -217,7 +185,7 @@ export default function AdminHouses() {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>House</th><th>City</th><th>Bed/Bath</th><th>Guests</th><th>Price/Night</th><th>Deposit</th><th>Status</th><th>Actions</th></tr>
+              <tr><th>House</th><th>City</th><th>Bed/Bath</th><th>Price/Month</th><th>Deposit</th><th>Rental Period</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {houses.map(h => (
@@ -237,9 +205,9 @@ export default function AdminHouses() {
                   </td>
                   <td>{h.city_name}<br /><span style={{ fontSize: 12, color: '#6b6b6b' }}>{h.state_name}</span></td>
                   <td>{h.bedrooms || h.rooms} bed · {h.bathrooms} bath</td>
-                  <td>Up to {h.max_guests || 4}{h.pets_allowed ? ' · 🐾' : ''}</td>
-                  <td style={{ fontWeight: 700 }}>${Number(h.price_per_night).toFixed(2)}</td>
+                  <td style={{ fontWeight: 700 }}>${Number(h.price_per_month || 0).toFixed(2)}</td>
                   <td>${Number(h.deposit_amount || 0).toFixed(2)}</td>
+                  <td>{h.min_rental_months}–{h.max_rental_months} mo</td>
                   <td><span className={`badge ${h.available ? 'badge-confirmed' : 'badge-cancelled'}`}>{h.available ? 'Active' : 'Inactive'}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -328,37 +296,23 @@ export default function AdminHouses() {
                   <label>Bathrooms *</label>
                   <input type="number" min="1" step="0.5" value={form.bathrooms} onChange={set('bathrooms')} required />
                 </div>
-                <div className="form-group">
-                  <label>Max Guests</label>
-                  <input type="number" min="1" value={form.maxGuests} onChange={set('maxGuests')} />
-                </div>
 
                 {/* Pricing */}
                 <div className="form-group">
-                  <label>Price per Night ($) *</label>
-                  <input type="number" min="0" step="0.01" placeholder="149.99" value={form.pricePerNight} onChange={set('pricePerNight')} required />
+                  <label>Price per Month ($) *</label>
+                  <input type="number" min="0" step="0.01" placeholder="1500.00" value={form.pricePerMonth} onChange={set('pricePerMonth')} required />
                 </div>
                 <div className="form-group">
-                  <label>Deposit Amount ($)</label>
-                  <input type="number" min="0" step="0.01" placeholder="200.00" value={form.depositAmount} onChange={set('depositAmount')} />
+                  <label>Security Deposit ($)</label>
+                  <input type="number" min="0" step="0.01" placeholder="1500.00" value={form.depositAmount} onChange={set('depositAmount')} />
                 </div>
                 <div className="form-group">
-                  <label>Extra Guest Fee ($/night)</label>
-                  <input type="number" min="0" step="0.01" placeholder="25.00" value={form.extraGuestFee} onChange={set('extraGuestFee')} />
+                  <label>Minimum Rental Period (months)</label>
+                  <input type="number" min="1" placeholder="1" value={form.minRentalMonths} onChange={set('minRentalMonths')} />
                 </div>
                 <div className="form-group">
-                  <label>Late Checkout Fee ($/hr)</label>
-                  <input type="number" min="0" step="0.01" placeholder="25.00" value={form.lateCheckoutFee} onChange={set('lateCheckoutFee')} />
-                </div>
-
-                {/* Times */}
-                <div className="form-group">
-                  <label>Check-In Time</label>
-                  <input type="time" value={form.checkinTime} onChange={set('checkinTime')} />
-                </div>
-                <div className="form-group">
-                  <label>Check-Out Time</label>
-                  <input type="time" value={form.checkoutTime} onChange={set('checkoutTime')} />
+                  <label>Maximum Rental Period (months)</label>
+                  <input type="number" min="1" placeholder="12" value={form.maxRentalMonths} onChange={set('maxRentalMonths')} />
                 </div>
 
                 {/* Photos */}
@@ -369,27 +323,11 @@ export default function AdminHouses() {
                 </div>
 
                 {/* Toggles */}
-                <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.petsAllowed} onChange={setCheck('petsAllowed')} />
-                    🐾 Pets Allowed
-                  </label>
-                </div>
-                <div className="form-group">
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                     <input type="checkbox" checked={form.available} onChange={setCheck('available')} />
                     Available for Booking
                   </label>
-                </div>
-
-                {/* Text blocks */}
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>House Rules</label>
-                  <textarea rows={6} value={form.houseRules} onChange={set('houseRules')} style={ta} />
-                </div>
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Check-In Instructions</label>
-                  <textarea rows={6} value={form.checkinInstructions} onChange={set('checkinInstructions')} style={ta} />
                 </div>
 
               </div>

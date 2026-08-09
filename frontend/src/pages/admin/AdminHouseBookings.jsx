@@ -4,13 +4,12 @@ import AdminLayout from './AdminLayout';
 import AdminHouseBookingDetail from './AdminHouseBookingDetail';
 
 const STATUS_CONFIG = {
-  pending_approval:        { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176' },
-  approved:                { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB' },
-  checked_in:              { label: 'Checked In',       bg: '#FFF3E0', color: '#E65100', border: '#FFCC80' },
-  completed:               { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
-  completed_with_charges:  { label: 'Completed w/ Charges', bg: '#FFF8E1', color: '#F57C00', border: '#FFE082' },
-  completed_extra_charged: { label: 'Extra Charged',    bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2' },
-  cancelled:               { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2' },
+  payment_pending:  { label: 'Payment Pending', bg: '#F5F5F5', color: '#555',    border: '#E0E0E0' },
+  pending_approval: { label: 'Pending Approval', bg: '#FFF9C4', color: '#F57F17', border: '#FFF176' },
+  approved:         { label: 'Approved',         bg: '#E3F2FD', color: '#1565C0', border: '#BBDEFB' },
+  active:           { label: 'Active Lease',     bg: '#FFF3E0', color: '#E65100', border: '#FFCC80' },
+  completed:        { label: 'Completed',        bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' },
+  cancelled:        { label: 'Cancelled',        bg: '#FFEBEE', color: '#C62828', border: '#FFCDD2' },
 };
 
 function StatusBadge({ status }) {
@@ -32,7 +31,7 @@ const FILTER_TABS = [
   { key: 'all',              label: 'All' },
   { key: 'pending_approval', label: '⏳ Pending' },
   { key: 'approved',         label: '✅ Approved' },
-  { key: 'checked_in',       label: '🏠 Checked In' },
+  { key: 'active',           label: '🏠 Active' },
   { key: 'completed',        label: '✓ Completed' },
   { key: 'cancelled',        label: '✕ Cancelled' },
 ];
@@ -50,25 +49,23 @@ export default function AdminHouseBookings() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedId]);
 
-  useEffect(() => {
+  const load = () => {
     api.get('/api/admin/house-bookings')
       .then(r => setBookings(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  };
 
-  const isCompleted = (s) => ['completed', 'completed_with_charges', 'completed_extra_charged'].includes(s);
+  useEffect(() => { load(); }, []);
 
-  const displayed = tab === 'all' ? bookings
-    : tab === 'completed' ? bookings.filter(b => isCompleted(b.status))
-    : bookings.filter(b => b.status === tab);
+  const displayed = tab === 'all' ? bookings : bookings.filter(b => b.status === tab);
 
   const counts = {
     all:              bookings.length,
     pending_approval: bookings.filter(b => b.status === 'pending_approval').length,
     approved:         bookings.filter(b => b.status === 'approved').length,
-    checked_in:       bookings.filter(b => b.status === 'checked_in').length,
-    completed:        bookings.filter(b => isCompleted(b.status)).length,
+    active:           bookings.filter(b => b.status === 'active').length,
+    completed:        bookings.filter(b => b.status === 'completed').length,
     cancelled:        bookings.filter(b => b.status === 'cancelled').length,
   };
 
@@ -108,10 +105,11 @@ export default function AdminHouseBookings() {
               <tr>
                 <th>#</th>
                 <th>Property</th>
-                <th>Guest</th>
-                <th>Dates</th>
-                <th>Guests</th>
-                <th>Total</th>
+                <th>Tenant</th>
+                <th>Move-In → Move-Out</th>
+                <th>Months</th>
+                <th>Monthly Rent</th>
+                <th>Next Payment</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -140,14 +138,12 @@ export default function AdminHouseBookings() {
                       <div style={{ fontSize: 11, color: '#6b6b6b' }}>{b.customer_email || b.user_email}</div>
                     </td>
                     <td style={{ fontSize: 12 }}>
-                      <div>{fmtDate(b.checkin_date)}</div>
-                      <div style={{ color: '#6b6b6b' }}>→ {fmtDate(b.checkout_date)}</div>
-                      <div style={{ color: '#888', fontSize: 11 }}>{b.total_nights} night{b.total_nights !== 1 ? 's' : ''}</div>
+                      <div>{fmtDate(b.move_in_date)}</div>
+                      <div style={{ color: '#6b6b6b' }}>→ {fmtDate(b.move_out_date)}</div>
                     </td>
-                    <td style={{ fontSize: 13 }}>
-                      {b.num_guests} {b.pets ? '🐾' : ''}
-                    </td>
-                    <td style={{ fontWeight: 700, color: '#1565C0' }}>${Number(b.total_amount).toFixed(2)}</td>
+                    <td style={{ fontSize: 13 }}>{b.total_months}</td>
+                    <td style={{ fontWeight: 700, color: '#1565C0' }}>${Number(b.monthly_rent || 0).toFixed(2)}</td>
+                    <td style={{ fontSize: 12 }}>{b.next_payment_date ? fmtDate(b.next_payment_date) : '—'}</td>
                     <td><StatusBadge status={b.status} /></td>
                     <td onClick={e => e.stopPropagation()}>
                       <button
@@ -163,7 +159,7 @@ export default function AdminHouseBookings() {
               })}
               {displayed.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', color: '#6b6b6b', padding: 40 }}>No bookings found.</td>
+                  <td colSpan={9} style={{ textAlign: 'center', color: '#6b6b6b', padding: 40 }}>No bookings found.</td>
                 </tr>
               )}
             </tbody>
@@ -174,21 +170,21 @@ export default function AdminHouseBookings() {
       {selectedId && (
         <div
           style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', paddingLeft:'calc(220px + 20px)', paddingRight:20, paddingTop:20, paddingBottom:20, animation:'fadeIn 0.2s ease' }}
-          onClick={() => setSelectedId(null)}
+          onClick={() => { setSelectedId(null); load(); }}
         >
           <div
             style={{ background:'#F0F4F8', width:'85%', maxWidth:1000, maxHeight:'90vh', borderRadius:16, overflow:'hidden', display:'flex', flexDirection:'column', position:'relative', boxShadow:'0 24px 80px rgba(0,0,0,0.4)' }}
             onClick={e => e.stopPropagation()}
           >
             <button
-              onClick={() => setSelectedId(null)}
+              onClick={() => { setSelectedId(null); load(); }}
               title="Close (Esc)"
               style={{ position:'absolute', top:16, right:16, zIndex:10, background:'white', border:'none', borderRadius:'50%', width:36, height:36, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(0,0,0,0.2)', lineHeight:1, transition:'transform 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.transform='scale(1.12)'}
               onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}
             >✕</button>
             <div style={{ overflowY:'auto', flex:1 }}>
-              <AdminHouseBookingDetail bookingId={selectedId} onClose={() => setSelectedId(null)} />
+              <AdminHouseBookingDetail bookingId={selectedId} onClose={() => { setSelectedId(null); load(); }} />
             </div>
           </div>
         </div>
