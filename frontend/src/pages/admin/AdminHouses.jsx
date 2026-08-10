@@ -7,6 +7,7 @@ const EMPTY_FORM = {
   rooms: 2, bedrooms: 1, bathrooms: 1,
   pricePerMonth: '', depositAmount: '0',
   minRentalMonths: '1', maxRentalMonths: '12',
+  gracePeriodDays: '5', latePaymentFee: '0',
   available: true,
 };
 
@@ -87,6 +88,8 @@ export default function AdminHouses() {
       depositAmount:    h.deposit_amount || '0',
       minRentalMonths:  h.min_rental_months || '1',
       maxRentalMonths:  h.max_rental_months || '12',
+      gracePeriodDays:  h.grace_period_days ?? '5',
+      latePaymentFee:   h.late_payment_fee || '0',
       available:        h.available,
     });
     if (h.state_id) {
@@ -313,6 +316,14 @@ export default function AdminHouses() {
                 <div className="form-group">
                   <label>Maximum Rental Period (months)</label>
                   <input type="number" min="1" placeholder="12" value={form.maxRentalMonths} onChange={set('maxRentalMonths')} />
+                </div>
+                <div className="form-group">
+                  <label>Grace Period (days)</label>
+                  <input type="number" min="0" placeholder="5" value={form.gracePeriodDays} onChange={set('gracePeriodDays')} />
+                </div>
+                <div className="form-group">
+                  <label>Late Payment Fee ($/day after grace period)</label>
+                  <input type="number" min="0" step="0.01" placeholder="50.00" value={form.latePaymentFee} onChange={set('latePaymentFee')} />
                 </div>
 
                 {/* Photos */}

@@ -292,7 +292,7 @@ router.get('/houses', async (req, res) => {
 
 router.post('/houses', upload.array('photos', 10), async (req, res) => {
   const { cityId, name, address, rooms, bedrooms, bathrooms, pricePerMonth,
-    depositAmount, minRentalMonths, maxRentalMonths } = req.body;
+    depositAmount, minRentalMonths, maxRentalMonths, gracePeriodDays, latePaymentFee } = req.body;
   if (!cityId || !name || !address || !rooms || !bathrooms || !pricePerMonth) {
     return res.status(400).json({ error: 'Required: cityId, name, address, rooms, bathrooms, pricePerMonth' });
   }
@@ -302,11 +302,12 @@ router.post('/houses', upload.array('photos', 10), async (req, res) => {
   try {
     const result = await db.query(
       `INSERT INTO houses (city_id, name, address, rooms, bedrooms, bathrooms, price_per_month, photos,
-         deposit_amount, min_rental_months, max_rental_months)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+         deposit_amount, min_rental_months, max_rental_months, grace_period_days, late_payment_fee)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       [cityId, name, address, parseInt(rooms), toInt(bedrooms) || 1, parseInt(bathrooms),
        Math.round(parseFloat(pricePerMonth) * 100) / 100, photos,
-       toNum(depositAmount) || 0, toInt(minRentalMonths) || 1, toInt(maxRentalMonths) || 12]
+       toNum(depositAmount) || 0, toInt(minRentalMonths) || 1, toInt(maxRentalMonths) || 12,
+       toInt(gracePeriodDays) ?? 5, toNum(latePaymentFee) || 0]
     );
     await db.query('UPDATE cities SET enabled = true WHERE id = $1', [cityId]);
     await db.query('UPDATE states SET enabled = true WHERE id = (SELECT state_id FROM cities WHERE id = $1)', [cityId]);
@@ -318,7 +319,7 @@ router.post('/houses', upload.array('photos', 10), async (req, res) => {
 
 router.put('/houses/:id', upload.array('photos', 10), async (req, res) => {
   const { name, address, rooms, bedrooms, bathrooms, pricePerMonth, available, clearPhotos,
-    depositAmount, minRentalMonths, maxRentalMonths } = req.body;
+    depositAmount, minRentalMonths, maxRentalMonths, gracePeriodDays, latePaymentFee } = req.body;
   const toNum = (v) => (v !== '' && v != null ? Math.round(parseFloat(v) * 100) / 100 : null);
   const toInt = (v) => (v !== '' && v != null ? parseInt(v) : null);
   try {
@@ -330,11 +331,13 @@ router.put('/houses/:id', upload.array('photos', 10), async (req, res) => {
     const result = await db.query(
       `UPDATE houses SET name=$1, address=$2, rooms=$3, bedrooms=$4, bathrooms=$5,
          price_per_month=$6, photos=$7, available=$8,
-         deposit_amount=$9, min_rental_months=$10, max_rental_months=$11
-       WHERE id=$12 RETURNING *`,
+         deposit_amount=$9, min_rental_months=$10, max_rental_months=$11,
+         grace_period_days=$12, late_payment_fee=$13
+       WHERE id=$14 RETURNING *`,
       [name, address, parseInt(rooms), toInt(bedrooms) || 1, parseInt(bathrooms),
        Math.round(parseFloat(pricePerMonth) * 100) / 100, photos, available !== 'false',
        toNum(depositAmount) || 0, toInt(minRentalMonths) || 1, toInt(maxRentalMonths) || 12,
+       toInt(gracePeriodDays) ?? 5, toNum(latePaymentFee) || 0,
        req.params.id]
     );
     res.json(result.rows[0]);

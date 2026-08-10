@@ -5,6 +5,7 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 import api from '../../utils/api';
 import { HouseStepBar, HouseHeroCard } from './HouseHeroCard';
 import { pendingIdFile, clearPendingIdFile } from './houseBookingSession';
+import { fmtLong, ordinal, parseLocal, buildDisplaySchedule } from './houseLeaseUtils';
 
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -265,6 +266,10 @@ export default function HousePayment() {
   const total           = Number(state.totalDueToday || 0);
   const monthlyRent      = Number(state.monthlyRent || 0);
   const deposit          = Number(state.deposit || 0);
+  const schedule         = buildDisplaySchedule(state.moveInDate, state.numMonths, monthlyRent);
+  const gracePeriodDays  = house?.grace_period_days ?? 5;
+  const latePaymentFee   = Number(house?.late_payment_fee || 0);
+  const rentDueDay       = state.moveInDate ? ordinal(parseLocal(state.moveInDate).getDate()) : null;
 
   return (
     <div style={{ minHeight: '100vh', backgroundImage: "url('https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1920&q=80')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', position: 'relative' }}>
@@ -295,6 +300,30 @@ export default function HousePayment() {
 
           <div style={{ marginTop: 14, background: '#F0F7FF', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#555' }}>
             💳 <strong>Remaining monthly payments:</strong> ${monthlyRent.toFixed(2)}/month for the rest of your lease.
+          </div>
+        </div>
+
+        {/* Monthly Payment Schedule */}
+        {schedule.length > 0 && (
+          <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Monthly Payment Schedule</div>
+            {schedule.map(m => (
+              <Row
+                key={m.monthNumber}
+                label={`Month ${m.monthNumber}`}
+                value={m.paid ? `Already paid (${fmtLong(m.dueDate)})` : `Due ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Payment Policy */}
+        <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 16, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0D2B6B', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #E3F2FD' }}>Payment Policy</div>
+          <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#333', lineHeight: 1.9 }}>
+            📅 Monthly rent due on the <strong>{rentDueDay}</strong> of each month<br />
+            ⏳ Grace period: <strong>{gracePeriodDays} day{gracePeriodDays !== 1 ? 's' : ''}</strong><br />
+            ⚠️ Late payment fee: <strong>${latePaymentFee.toFixed(2)} per day</strong> after grace period
           </div>
         </div>
 

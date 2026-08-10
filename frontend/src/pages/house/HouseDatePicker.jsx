@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../../utils/api';
 import { HouseStepBar } from './HouseHeroCard';
+import { parseLocal, fmtLong, ordinal, addMonthsClamped, buildDisplaySchedule } from './houseLeaseUtils';
 
 const CSS = `
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -13,27 +14,6 @@ const CSS = `
 function dateStr(d) {
   if (!d) return null;
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function parseLocal(s) {
-  if (!s) return null;
-  const [y,m,d] = s.split('-').map(Number);
-  return new Date(y, m-1, d, 12, 0, 0);
-}
-function fmtLong(s) {
-  if (!s) return '';
-  const d = parseLocal(s);
-  return d.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
-}
-
-// Add N calendar months to a YYYY-MM-DD string, clamping to the last valid day of the target month.
-function addMonthsClamped(dateStr_, months) {
-  const [y, m, d] = dateStr_.split('-').map(Number);
-  const targetMonthIndex = m - 1 + months;
-  const targetYear = y + Math.floor(targetMonthIndex / 12);
-  const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
-  const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
-  const day = Math.min(d, lastDay);
-  return `${targetYear}-${String(targetMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
 
 function PhotoGallery({ house }) {
@@ -156,6 +136,10 @@ export default function HouseDatePicker() {
   const moveOutDate   = moveInDate && numMonths ? addMonthsClamped(moveInDate, numMonths) : null;
 
   const canContinue = available && moveInDate && numMonths > 0 && parseLocal(moveInDate) >= today;
+  const schedule = buildDisplaySchedule(moveInDate, numMonths, monthlyRent);
+  const gracePeriodDays = house?.grace_period_days ?? 5;
+  const latePaymentFee  = rp(house?.late_payment_fee || 0);
+  const rentDueDay = moveInDate ? ordinal(parseLocal(moveInDate).getDate()) : null;
 
   const handleContinue = () => {
     navigate(`/house/book/${houseId}/details`, {
@@ -270,6 +254,33 @@ export default function HouseDatePicker() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 14 }}>
                   <span style={{ color: '#555' }}>Move-out date</span>
                   <span style={{ fontWeight: 600 }}>{fmtLong(moveOutDate)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Monthly Payment Schedule */}
+            {schedule.length > 0 && (
+              <div style={CARD}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1565C0', marginBottom: 16 }}>Monthly Payment Schedule</h3>
+                {schedule.map(m => (
+                  <div key={m.monthNumber} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: 14 }}>
+                    <span style={{ color: '#555' }}>Month {m.monthNumber}</span>
+                    <span style={{ fontWeight: 600, color: m.paid ? '#2E7D32' : '#1a1a1a' }}>
+                      {m.paid ? `Already paid (${fmtLong(m.dueDate)})` : `Due ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Payment Policy */}
+            {moveInDate && numMonths > 0 && (
+              <div style={CARD}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1565C0', marginBottom: 16 }}>Payment Policy</h3>
+                <div style={{ background: '#F0F7FF', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#333', lineHeight: 1.9 }}>
+                  📅 Monthly rent due on the <strong>{rentDueDay}</strong> of each month<br />
+                  ⏳ Grace period: <strong>{gracePeriodDays} day{gracePeriodDays !== 1 ? 's' : ''}</strong><br />
+                  ⚠️ Late payment fee: <strong>${latePaymentFee.toFixed(2)} per day</strong> after grace period
                 </div>
               </div>
             )}
