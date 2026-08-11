@@ -34,12 +34,13 @@ export function addMonthsClamped(dateStr, months) {
   return `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-// Month-by-month payment schedule for display: month 1 is paid at booking, months 2..N are due monthly after.
+// Month-by-month payment schedule for display (projected, before any payment has been made):
+// month 1 is charged today at booking, months 2..N fall due monthly after that.
 export function buildDisplaySchedule(moveInDate, numMonths, monthlyRent) {
   if (!moveInDate || !numMonths) return [];
-  const rows = [{ monthNumber: 1, dueDate: moveInDate, amount: monthlyRent, paid: true }];
+  const rows = [{ monthNumber: 1, dueDate: moveInDate, amount: monthlyRent, dueToday: true }];
   for (let n = 2; n <= numMonths; n++) {
-    rows.push({ monthNumber: n, dueDate: addMonthsClamped(moveInDate, n - 1), amount: monthlyRent, paid: false });
+    rows.push({ monthNumber: n, dueDate: addMonthsClamped(moveInDate, n - 1), amount: monthlyRent, dueToday: false });
   }
   return rows;
 }

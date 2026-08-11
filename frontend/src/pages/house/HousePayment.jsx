@@ -311,7 +311,9 @@ export default function HousePayment() {
               <Row
                 key={m.monthNumber}
                 label={`Month ${m.monthNumber}`}
-                value={m.paid ? `Already paid (${fmtLong(m.dueDate)})` : `Due ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
+                value={m.dueToday
+                  ? `Due today — $${Number(m.amount).toFixed(2)} (paid at booking)`
+                  : `Due on ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
               />
             ))}
           </div>

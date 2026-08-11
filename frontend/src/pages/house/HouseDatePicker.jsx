@@ -265,8 +265,10 @@ export default function HouseDatePicker() {
                 {schedule.map(m => (
                   <div key={m.monthNumber} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: 14 }}>
                     <span style={{ color: '#555' }}>Month {m.monthNumber}</span>
-                    <span style={{ fontWeight: 600, color: m.paid ? '#2E7D32' : '#1a1a1a' }}>
-                      {m.paid ? `Already paid (${fmtLong(m.dueDate)})` : `Due ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
+                    <span style={{ fontWeight: 600, color: '#1a1a1a' }}>
+                      {m.dueToday
+                        ? `Due today — $${Number(m.amount).toFixed(2)} (paid at booking)`
+                        : `Due on ${fmtLong(m.dueDate)} — $${Number(m.amount).toFixed(2)}`}
                     </span>
                   </div>
                 ))}
