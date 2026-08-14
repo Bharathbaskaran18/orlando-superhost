@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 
 // ── Intersection Observer hook ──────────────────────────────────────────────
@@ -160,7 +159,6 @@ function ServiceSection({ bg, imgSrc, imgRight, tag, title, subtitle, bullets, b
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Hero animation
@@ -191,7 +189,6 @@ export default function HomePage() {
   };
 
   const handleServiceClick = (service) => {
-    if (!user) { navigate('/login'); return; }
     setTargetService(service);
     setSelectorOpen(true);
     loadStates();
