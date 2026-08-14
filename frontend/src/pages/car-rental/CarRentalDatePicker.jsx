@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { CarStepBar, CarHeroCard } from './CarHeroCard';
+import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 
 // ── operational hours: 8:00 AM – 6:00 PM, 30-min intervals ──────────────────
 const TIMES = Array.from({ length: 21 }, (_, i) => {
@@ -225,7 +227,7 @@ export default function CarRentalDatePicker() {
   const { carId } = useParams();
   const navigate  = useNavigate();
   const location  = useLocation();
-  const car       = location.state?.car;
+  const { user }  = useAuth();
 
   const minPickup = (() => {
     const d = new Date();
@@ -242,17 +244,18 @@ export default function CarRentalDatePicker() {
   const [error,        setError]        = useState('');
   const [viewYear,     setViewYear]     = useState(minPickup.getFullYear());
   const [viewMonth,    setViewMonth]    = useState(minPickup.getMonth());
-  const [carInfo,      setCarInfo]      = useState(car);
+  const [car,          setCar]          = useState(location.state?.car || null);
+  const [loading,      setLoading]      = useState(!location.state?.car);
   const [bookedRanges,        setBookedRanges]        = useState([]);
   const [partialPickupMinTime, setPartialPickupMinTime] = useState(null);
-
-  useEffect(() => { if (!car) navigate('/', { replace: true }); }, []);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     if (!carId) return;
     api.get(`/api/cars/${carId}`)
-      .then(r => setCarInfo(r.data))
-      .catch(() => {});
+      .then(r => setCar(r.data))
+      .catch(() => navigate('/', { replace: true }))
+      .finally(() => setLoading(false));
   }, [carId]);
 
   useEffect(() => {
@@ -262,6 +265,7 @@ export default function CarRentalDatePicker() {
       .catch(() => {});
   }, [carId]);
 
+  if (loading) return <div className="loading"><div className="spinner" /></div>;
   if (!car) return null;
 
   // ── filtered pickup times when partial date selected ──
@@ -285,6 +289,7 @@ export default function CarRentalDatePicker() {
     if (!returnDate) return setError('Please select a return date.');
     if (returnDate < pickupDate) return setError('Return date must be on or after the pickup date.');
     if (!is48HoursAhead(pickupDate, pickupTime)) return setError('Booking must be made at least 48 hours before pickup time.');
+    if (!user) { setShowLoginPrompt(true); return; }
     navigate(`/car-rental/book/${carId}/details`, {
       state: {
         car,
@@ -377,7 +382,7 @@ export default function CarRentalDatePicker() {
           </p>
 
           <CarStepBar currentStep={1} />
-          <CarHeroCard car={carInfo} />
+          <CarHeroCard car={car} />
 
           {/* ── single white card ── */}
           <div style={{ background:'white', borderRadius:24, padding:'32px 36px 28px', boxShadow:'0 4px 40px rgba(0,0,20,0.2)', animation:'slideUp .4s ease' }}>
@@ -556,6 +561,12 @@ export default function CarRentalDatePicker() {
           </div>{/* end card */}
         </div>
       </div>
+
+      <LoginPromptModal
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        redirectTo={`/car-rental/book/${carId}`}
+      />
     </div>
   );
 }

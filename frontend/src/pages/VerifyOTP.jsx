@@ -7,6 +7,7 @@ export default function VerifyOTP() {
   const [searchParams] = useSearchParams();
   const userId = searchParams.get('userId');
   const email = searchParams.get('email');
+  const from = searchParams.get('from');
 
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -55,7 +56,7 @@ export default function VerifyOTP() {
     try {
       await api.post('/api/auth/verify-otp', { userId, otp });
       setSuccess('Email verified! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 1800);
+      setTimeout(() => navigate('/login', { state: { from } }), 1800);
     } catch (err) {
       setError(err.response?.data?.error || 'Verification failed');
       setDigits(['', '', '', '', '', '']);

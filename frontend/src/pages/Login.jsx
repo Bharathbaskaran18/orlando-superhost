@@ -13,6 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const successMsg = location.state?.successMsg || '';
+  const from = location.state?.from || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,11 +22,12 @@ export default function Login() {
     try {
       const { data } = await api.post('/api/auth/login', form);
       login(data.token, data.user);
-      navigate('/');
+      navigate(from);
     } catch (err) {
       const data = err.response?.data;
       if (err.response?.status === 403 && data?.pendingVerification) {
-        navigate(`/verify-otp?userId=${data.userId}&email=${encodeURIComponent(form.email)}`);
+        const fromParam = from && from !== '/' ? `&from=${encodeURIComponent(from)}` : '';
+        navigate(`/verify-otp?userId=${data.userId}&email=${encodeURIComponent(form.email)}${fromParam}`);
         return;
       }
       setError(data?.error || 'Login failed');
@@ -106,7 +108,7 @@ export default function Login() {
           </form>
 
           <div className="form-footer">
-            Don't have an account? <Link to="/register">Create one →</Link>
+            Don't have an account? <Link to="/register" state={{ from: location.state?.from }}>Create one →</Link>
           </div>
         </div>
       </div>

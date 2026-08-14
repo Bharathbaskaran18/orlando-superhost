@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import LoginPromptModal from '../components/LoginPromptModal';
 
 const SLIDE_CSS = `
   @keyframes slideshow-fadein { from{opacity:0} to{opacity:1} }
@@ -64,6 +65,7 @@ export default function HouseBooking() {
   const [houses, setHouses]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity]       = useState(null);
+  const [loginPromptPath, setLoginPromptPath] = useState(null);
 
   useEffect(() => {
     api.get(`/api/cities/${cityId}`).then(r => setCity(r.data)).catch(() => {});
@@ -73,7 +75,7 @@ export default function HouseBooking() {
   }, [cityId]);
 
   const handleBook = (houseId) => {
-    if (!user) { navigate('/login'); return; }
+    if (!user) { setLoginPromptPath(`/house/book/${houseId}`); return; }
     navigate(`/house/book/${houseId}`);
   };
 
@@ -113,6 +115,11 @@ export default function HouseBooking() {
           )}
         </div>
       </div>
+      <LoginPromptModal
+        open={!!loginPromptPath}
+        onClose={() => setLoginPromptPath(null)}
+        redirectTo={loginPromptPath}
+      />
     </div>
   );
 }

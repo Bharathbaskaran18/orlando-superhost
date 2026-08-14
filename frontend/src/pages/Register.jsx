@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import Logo from '../components/Logo';
 
@@ -83,6 +83,7 @@ function boxShadow(focused) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({
     firstName: '', lastName: '',
@@ -147,7 +148,7 @@ export default function Register() {
     try {
       const name = `${form.firstName.trim()} ${form.lastName.trim()}`;
       await api.post('/api/auth/register', { name, email: form.email, password: form.pwd });
-      navigate('/login', { state: { successMsg: 'Account created successfully! Please login.' } });
+      navigate('/login', { state: { successMsg: 'Account created successfully! Please login.', from: location.state?.from } });
     } catch (err) {
       setSubmitErr(err.response?.data?.error || 'Registration failed');
     } finally {
@@ -442,7 +443,7 @@ export default function Register() {
         </form>
 
         <div className="form-footer">
-          Already have an account? <Link to="/login">Sign in →</Link>
+          Already have an account? <Link to="/login" state={{ from: location.state?.from }}>Sign in →</Link>
         </div>
       </div>
     </div>

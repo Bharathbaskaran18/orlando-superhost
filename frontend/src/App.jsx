@@ -112,17 +112,17 @@ function AppRoutes() {
       <Route path="/admin/house-bookings/:id" element={<AdminRoute><AdminHouseBookingDetail /></AdminRoute>} />
       <Route path="/admin/agent-bookings" element={<AdminRoute><AdminAgentBookings /></AdminRoute>} />
       <Route path="/admin/agent-bookings/:id" element={<AdminRoute><AdminAgentBookingDetail /></AdminRoute>} />
-      <Route path="/car-rental/book/:carId" element={<UserLayout><PrivateRoute><CarRentalDatePicker /></PrivateRoute></UserLayout>} />
+      <Route path="/car-rental/book/:carId" element={<UserLayout><CarRentalDatePicker /></UserLayout>} />
       <Route path="/car-rental/book/:carId/details" element={<UserLayout><PrivateRoute><CarRentalCustomerDetails /></PrivateRoute></UserLayout>} />
       <Route path="/car-rental/book/:carId/payment" element={<UserLayout><PrivateRoute><CarRentalPayment /></PrivateRoute></UserLayout>} />
       <Route path="/car-rental/my-rentals" element={<UserLayout><PrivateRoute><MyCarRentals /></PrivateRoute></UserLayout>} />
       <Route path="/car-rental/rental/:id" element={<UserLayout><PrivateRoute><CarRentalDetail /></PrivateRoute></UserLayout>} />
-      <Route path="/house/book/:houseId" element={<UserLayout><PrivateRoute><HouseDatePicker /></PrivateRoute></UserLayout>} />
+      <Route path="/house/book/:houseId" element={<UserLayout><HouseDatePicker /></UserLayout>} />
       <Route path="/house/book/:houseId/details" element={<UserLayout><PrivateRoute><HouseCustomerDetails /></PrivateRoute></UserLayout>} />
       <Route path="/house/book/:houseId/payment" element={<UserLayout><PrivateRoute><HousePayment /></PrivateRoute></UserLayout>} />
       <Route path="/house/my-bookings" element={<UserLayout><PrivateRoute><MyHouseBookings /></PrivateRoute></UserLayout>} />
       <Route path="/house/booking/:id" element={<UserLayout><PrivateRoute><HouseBookingDetail /></PrivateRoute></UserLayout>} />
-      <Route path="/agent/book/:agentId" element={<UserLayout><PrivateRoute><AgentDatePicker /></PrivateRoute></UserLayout>} />
+      <Route path="/agent/book/:agentId" element={<UserLayout><AgentDatePicker /></UserLayout>} />
       <Route path="/agent/book/:agentId/details" element={<UserLayout><PrivateRoute><AgentCustomerDetails /></PrivateRoute></UserLayout>} />
       <Route path="/agent/book/:agentId/payment" element={<UserLayout><PrivateRoute><AgentPayment /></PrivateRoute></UserLayout>} />
       <Route path="/agent/booking/:id" element={<UserLayout><PrivateRoute><AgentBookingDetail /></PrivateRoute></UserLayout>} />

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../utils/api';
 import { formatPrice, fmtNum } from '../utils/formatPrice';
+import { useAuth } from '../context/AuthContext';
+import LoginPromptModal from '../components/LoginPromptModal';
 
 const HERO_IMGS = [
   'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1800&q=80',
@@ -238,12 +240,14 @@ function CarCard({ car, index, onBook }) {
 export default function CarBooking() {
   const { cityId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [city, setCity] = useState(null);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState('default');
   const [heroImg] = useState(HERO_IMGS[Math.floor(Math.random() * HERO_IMGS.length)]);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [loginPromptPath, setLoginPromptPath] = useState(null);
 
   useEffect(() => {
     api.get(`/api/cities/${cityId}`).then(r => setCity(r.data)).catch(() => navigate('/'));
@@ -252,6 +256,11 @@ export default function CarBooking() {
       .catch(() => setCars([]))
       .finally(() => setLoading(false));
   }, [cityId]);
+
+  const handleBook = (car) => {
+    if (!user) { setLoginPromptPath(`/car-rental/book/${car.id}`); return; }
+    navigate(`/car-rental/book/${car.id}`, { state: { car } });
+  };
 
   const sorted = sortCars(cars, sort);
 
@@ -357,7 +366,7 @@ export default function CarBooking() {
                 key={car.id}
                 car={car}
                 index={i}
-                onBook={car => navigate(`/car-rental/book/${car.id}`, { state: { car } })}
+                onBook={handleBook}
               />
             ))}
           </div>
@@ -371,6 +380,12 @@ export default function CarBooking() {
           100% { background-position: -200% 0; }
         }
       `}</style>
+
+      <LoginPromptModal
+        open={!!loginPromptPath}
+        onClose={() => setLoginPromptPath(null)}
+        redirectTo={loginPromptPath}
+      />
     </div>
   );
 }

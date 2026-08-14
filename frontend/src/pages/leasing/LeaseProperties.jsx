@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 
 export default function LeaseProperties() {
   const { cityId } = useParams();
@@ -10,6 +11,7 @@ export default function LeaseProperties() {
   const [city, setCity] = useState(null);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loginPromptPath, setLoginPromptPath] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -30,10 +32,7 @@ export default function LeaseProperties() {
   }, [cityId]);
 
   const handleApply = (propertyId) => {
-    if (!user) {
-      navigate('/login', { state: { from: `/leasing/apply/${propertyId}` } });
-      return;
-    }
+    if (!user) { setLoginPromptPath(`/leasing/apply/${propertyId}`); return; }
     navigate(`/leasing/apply/${propertyId}`);
   };
 
@@ -134,6 +133,11 @@ export default function LeaseProperties() {
       )}
     </div>
       </div>
+      <LoginPromptModal
+        open={!!loginPromptPath}
+        onClose={() => setLoginPromptPath(null)}
+        redirectTo={loginPromptPath}
+      />
     </div>
   );
 }

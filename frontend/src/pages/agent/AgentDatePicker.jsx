@@ -4,6 +4,8 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import api from '../../utils/api';
 import { AgentStepBar, AgentHeroCard } from './AgentHeroCard';
+import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -57,6 +59,7 @@ const CAL_CSS = `
 export default function AgentDatePicker() {
   const { agentId } = useParams();
   const navigate    = useNavigate();
+  const { user }    = useAuth();
 
   const [agent, setAgent]           = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -64,6 +67,7 @@ export default function AgentDatePicker() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [startTime, setStartTime]   = useState('');
   const [endTime, setEndTime]       = useState('');
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -121,6 +125,7 @@ export default function AgentDatePicker() {
   const canContinue = selectedDate && startTime && endTime && totalMins >= 60;
 
   const handleContinue = () => {
+    if (!user) { setShowLoginPrompt(true); return; }
     navigate(`/agent/book/${agentId}/details`, {
       state: {
         agentId:       parseInt(agentId),
@@ -355,6 +360,12 @@ export default function AgentDatePicker() {
           </div>
         </div>
       </div>
+
+      <LoginPromptModal
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        redirectTo={`/agent/book/${agentId}`}
+      />
     </div>
   );
 }

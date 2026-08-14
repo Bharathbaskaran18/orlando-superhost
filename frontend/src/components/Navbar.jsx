@@ -267,7 +267,7 @@ export default function Navbar() {
               <Link to="/register" style={{
                 background: '#F57C00', color: 'white', padding: '7px 16px',
                 borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14,
-              }}>Register</Link>
+              }}>Sign Up</Link>
             </>
           )}
         </div>

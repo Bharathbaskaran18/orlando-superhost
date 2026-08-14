@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../utils/api';
 import PhotoLightbox from '../components/PhotoLightbox';
+import { useAuth } from '../context/AuthContext';
+import LoginPromptModal from '../components/LoginPromptModal';
 
 const PILL_COLORS = [
   { bg: '#E3F2FD', text: '#1565C0' },
@@ -26,12 +28,19 @@ function LangBadge({ lang, index }) {
 export default function AgentBooking() {
   const { cityId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [city, setCity]           = useState(null);
   const [agents, setAgents]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [filterLanguage, setFilterLanguage] = useState('');
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [loginPromptPath, setLoginPromptPath] = useState(null);
+
+  const handleBook = (agentId) => {
+    if (!user) { setLoginPromptPath(`/agent/book/${agentId}`); return; }
+    navigate(`/agent/book/${agentId}`);
+  };
 
   useEffect(() => {
     api.get(`/api/cities/${cityId}`)
@@ -161,7 +170,7 @@ export default function AgentBooking() {
                       <button
                         className="btn btn-full"
                         style={{ background: '#0D2B6B', color: 'white' }}
-                        onClick={() => navigate(`/agent/book/${agent.id}`)}
+                        onClick={() => handleBook(agent.id)}
                       >
                         Book Agent →
                       </button>
@@ -174,6 +183,11 @@ export default function AgentBooking() {
         </div>
       </div>
     </div>
+    <LoginPromptModal
+      open={!!loginPromptPath}
+      onClose={() => setLoginPromptPath(null)}
+      redirectTo={loginPromptPath}
+    />
     </>
   );
 }

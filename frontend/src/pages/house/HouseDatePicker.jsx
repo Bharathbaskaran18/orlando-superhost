@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api, { API_URL } from '../../utils/api';
 import { HouseStepBar } from './HouseHeroCard';
 import { parseLocal, fmtLong, ordinal, addMonthsClamped, buildDisplaySchedule } from './houseLeaseUtils';
+import { useAuth } from '../../context/AuthContext';
+import LoginPromptModal from '../../components/LoginPromptModal';
 
 const CSS = `
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -108,9 +110,11 @@ function PhotoGallery({ house }) {
 export default function HouseDatePicker() {
   const { houseId } = useParams();
   const navigate    = useNavigate();
+  const { user }    = useAuth();
   const [house, setHouse]     = useState(null);
   const [available, setAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const today = new Date(); today.setHours(0,0,0,0);
   const minMoveIn = dateStr(today);
@@ -142,6 +146,7 @@ export default function HouseDatePicker() {
   const rentDueDay = moveInDate ? ordinal(parseLocal(moveInDate).getDate()) : null;
 
   const handleContinue = () => {
+    if (!user) { setShowLoginPrompt(true); return; }
     navigate(`/house/book/${houseId}/details`, {
       state: { moveInDate, numMonths, moveOutDate, monthlyRent, deposit, totalDueToday },
     });
@@ -303,6 +308,12 @@ export default function HouseDatePicker() {
           </>
         )}
       </div>
+
+      <LoginPromptModal
+        open={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        redirectTo={`/house/book/${houseId}`}
+      />
     </div>
   );
 }
