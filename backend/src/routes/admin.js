@@ -515,6 +515,7 @@ router.post('/test-email', async (req, res) => {
   }
 
   try {
+    console.log('[EMAIL TRIGGER] Sending email to:', to);
     const result = await sendEmail({
       to,
       subject: 'Test Email — Orlando Superhost',

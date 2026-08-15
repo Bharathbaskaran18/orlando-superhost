@@ -310,6 +310,7 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
       const customerEmail = (booking.customer_email || '').trim() || (booking.user_email || '').trim();
       console.log(`[CUSTOMER EMAIL] Sending to: ${customerEmail} Type: confirmation (booking #${booking.id})`);
       console.log(`[EMAIL DEBUG] customer_email field="${booking.customer_email}" user_email field="${booking.user_email}" resolved="${customerEmail}"`);
+      console.log('[EMAIL TRIGGER] Sending email to:', customerEmail);
       sendEmail({
         to: customerEmail,
         subject: `Booking Confirmed — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
@@ -318,6 +319,7 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
         console.log(`[CUSTOMER EMAIL] Result: ${r?.messageId || (r?.skipped ? 'skipped-smtp-not-configured' : 'unknown')} (booking #${booking.id})`);
       }).catch(err => console.error(`[CUSTOMER EMAIL] FAILED for booking #${booking.id}:`, err.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
       sendEmail({
         to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Car Rental Booking #${booking.id} — ${booking.customer_full_name}`,
@@ -416,6 +418,7 @@ router.post('/bookings/:id/test-confirm', authenticateToken, async (req, res) =>
       const customerEmail = (booking.customer_email || '').trim() || (booking.user_email || '').trim();
       console.log(`[CUSTOMER EMAIL] Sending to: ${customerEmail} Type: test-confirm (booking #${booking.id})`);
       console.log(`[EMAIL DEBUG] customer_email field="${booking.customer_email}" user_email field="${booking.user_email}" resolved="${customerEmail}"`);
+      console.log('[EMAIL TRIGGER] Sending email to:', customerEmail);
       sendEmail({
         to: customerEmail,
         subject: `Booking Confirmed — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
@@ -424,6 +427,7 @@ router.post('/bookings/:id/test-confirm', authenticateToken, async (req, res) =>
         console.log(`[CUSTOMER EMAIL] Result: ${r?.messageId || (r?.skipped ? 'skipped-smtp-not-configured' : 'unknown')} (booking #${booking.id})`);
       }).catch(err => console.error(`[CUSTOMER EMAIL] FAILED for booking #${booking.id}:`, err.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
       sendEmail({
         to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Car Rental Booking #${booking.id} — ${booking.customer_full_name}`,
@@ -475,6 +479,7 @@ router.post('/bookings/:id/sign', authenticateToken, async (req, res) => {
       [signatureName.trim(), req.params.id]
     );
 
+    console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
     sendEmail({
       to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Signed Agreement — Car Rental #${req.params.id} — ${crb.rows[0].customer_full_name}`,
@@ -509,6 +514,7 @@ router.delete('/bookings/:id', authenticateToken, async (req, res) => {
     );
 
     console.log(`[CUSTOMER EMAIL] Sending to: ${booking.customer_email} Type: cancel (booking #${booking.id})`);
+    console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
     sendEmail({
       to: booking.customer_email,
       subject: `Booking Cancelled — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,

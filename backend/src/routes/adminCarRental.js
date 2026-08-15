@@ -287,6 +287,7 @@ router.put('/car-rental/bookings/:id/send-agreement', async (req, res) => {
     const pdfPath = path.join(__dirname, '../../uploads', pdfFilename);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+    console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
     sendEmail({
       to: booking.customer_email,
       subject: `Your Rental Agreement — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
@@ -341,6 +342,7 @@ router.put('/car-rental/bookings/:id/admin-sign', async (req, res) => {
     // Send "Your Car is Ready for Pickup!" email
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     console.log(`[EMAIL] Triggering pickup-ready email → ${booking.customer_email} (booking #${booking.id})`);
+    console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
     sendEmail({
       to: booking.customer_email,
       subject: `Your Car is Ready for Pickup! 🚗 — ${booking.year} ${booking.make} ${booking.model}`,
@@ -374,12 +376,14 @@ router.put('/car-rental/bookings/:id/cancel', async (req, res) => {
       [req.params.id]
     );
 
+    console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
     sendEmail({
       to: booking.customer_email,
       subject: `Your Booking Has Been Cancelled — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
       html: buildAdminCancelEmail(booking),
     }).catch(err => console.error('[EMAIL] Admin cancel email failed:', err.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
     sendEmail({
       to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `[Admin Cancelled] Car Rental #${booking.id} — ${booking.customer_full_name}`,
@@ -591,6 +595,7 @@ router.put('/car-rental/bookings/:id/mark-pickup', async (req, res) => {
     );
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
     sendEmail({
       to: booking.customer_email,
       subject: `Your Rental Has Started! 🚗 — ${booking.year} ${booking.make} ${booking.model}`,
@@ -844,6 +849,7 @@ router.put('/car-rental/bookings/:id/process-return', async (req, res) => {
         .map(photo => ({ filename: photo, path: path.join(__dirname, '../../uploads', photo) }))
         .filter(a => fs.existsSync(a.path));
       console.log(`[EMAIL] Sending extra-charge return email → ${booking.customer_email} (booking #${booking.id})`);
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({
         to: booking.customer_email,
         subject: `Return Complete — Additional Charge Applied ⚠️ — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
@@ -854,6 +860,7 @@ router.put('/car-rental/bookings/:id/process-return', async (req, res) => {
       }).catch(err => console.error('[EMAIL] Extra charge email failed:', err.message));
     } else {
       console.log(`[EMAIL] Sending return summary email → ${booking.customer_email} (booking #${booking.id})`);
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({
         to: booking.customer_email,
         subject: `Your Car Has Been Returned Successfully ✅ — ${booking.year} ${booking.make} ${booking.model} (#${booking.id})`,
@@ -863,6 +870,7 @@ router.put('/car-rental/bookings/:id/process-return', async (req, res) => {
       }).catch(err => console.error('[EMAIL] Return summary failed:', err.message));
     }
 
+    console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
     sendEmail({
       to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Car Returned — Booking #${req.params.id} — ${booking.year} ${booking.make} ${booking.model}`,

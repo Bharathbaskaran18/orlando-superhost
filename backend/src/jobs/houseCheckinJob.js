@@ -108,12 +108,14 @@ async function runHouseMoveInJob() {
         [b.id]
       );
 
+      console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
       sendEmail({
         to: b.customer_email,
         subject: `You're Moved In Today! 🏠 Welcome, ${b.customer_first_name}!`,
         html: buildMoveInEmail(b),
       }).catch(err => console.error(`[JOB] House move-in email failed for #${b.id}:`, err.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', ADMIN_EMAIL);
       sendEmail({
         to: ADMIN_EMAIL,
         subject: `Auto Move-In — Booking #${b.id} — ${b.house_name}`,

@@ -208,8 +208,10 @@ router.put('/leasing/applications/:id/status', async (req, res) => {
     if (prop && app.email) {
       const emailCfg = buildStatusEmail(status, app, prop, adminNote);
       if (emailCfg) {
+        console.log('[EMAIL TRIGGER] Sending email to:', app.email);
         sendEmail({ to: app.email, subject: emailCfg.subject, html: emailCfg.html })
           .catch(e => console.error(`[EMAIL] lease-status-${status}:`, e.message));
+        console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
         sendEmail({
           to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `[Admin] ${emailCfg.adminSubject}`,
@@ -356,6 +358,7 @@ router.put('/leasing/appointments/:id', async (req, res) => {
         [adminNote || null, appt.application_id]
       );
       if (apptCtx) {
+        console.log('[EMAIL TRIGGER] Sending email to:', apptCtx.email);
         sendEmail({
           to: apptCtx.email,
           subject: `Viewing Appointment Confirmed — ${apptCtx.property_title}`,
@@ -369,6 +372,7 @@ ${adminNote ? `<div class="st">Notes</div><div class="ib">${adminNote}</div>` : 
 <div class="gb">✅ Please arrive on time. If you need to reschedule, contact us at least 24 hours in advance.</div>
 <div class="ib">Questions? Email us at <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-confirm-customer:', e.message));
+        console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
         sendEmail({
           to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Confirmed — ${apptCtx.full_name} — ${fmtDate(cfDate)}`,
@@ -392,6 +396,7 @@ ${adminNote ? `<div class="st">Notes</div><div class="ib">${adminNote}</div>` : 
         [adminNote || null, appt.application_id]
       );
       if (apptCtx) {
+        console.log('[EMAIL TRIGGER] Sending email to:', apptCtx.email);
         sendEmail({
           to: apptCtx.email,
           subject: `Viewing Appointment Rescheduled — ${apptCtx.property_title}`,
@@ -404,6 +409,7 @@ ${adminNote ? `<div class="st">Notes</div><div class="ib">${adminNote}</div>` : 
 ${adminNote ? `<div class="st">Reason / Notes</div><div class="wb">${adminNote}</div>` : ''}
 <div class="ib">Please confirm your availability. If you have questions, email us at <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-reschedule-customer:', e.message));
+        console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
         sendEmail({
           to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Rescheduled — ${apptCtx.full_name} — ${fmtDate(confirmedDate)}`,
@@ -425,6 +431,7 @@ ${adminNote ? `<div class="st">Reason / Notes</div><div class="wb">${adminNote}<
         [adminNote || null, appt.application_id]
       );
       if (apptCtx) {
+        console.log('[EMAIL TRIGGER] Sending email to:', apptCtx.email);
         sendEmail({
           to: apptCtx.email,
           subject: `Viewing Appointment Cancelled — ${apptCtx.property_title}`,
@@ -435,6 +442,7 @@ ${adminNote ? `<div class="st">Reason / Notes</div><div class="wb">${adminNote}<
 ${adminNote ? `<div class="st">Reason</div><div class="rb">${adminNote}</div>` : ''}
 <div class="ib">Please contact us to reschedule or for more information: <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-cancel-customer:', e.message));
+        console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
         sendEmail({
           to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Cancelled — ${apptCtx.full_name} — ${apptCtx.property_title}`,

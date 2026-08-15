@@ -71,8 +71,10 @@ router.put('/house-bookings/:id/approve', async (req, res) => {
 
     await db.query(`UPDATE house_bookings SET status='approved', updated_at=NOW() WHERE id=$1`, [req.params.id]);
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({ to: b.customer_email, subject: 'Your Lease is Confirmed! ✅ Orlando Superhost', html: buildApprovalEmail(b) })
       .catch(e => console.error('[EMAIL] hb-approve:', e.message));
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `House Lease #${b.id} Approved`, html: buildAdminActionEmail('Approved', b) })
       .catch(e => console.error('[EMAIL] hb-admin-approve:', e.message));
 
@@ -113,8 +115,10 @@ router.put('/house-bookings/:id/cancel', async (req, res) => {
 
     await db.query(`UPDATE house_bookings SET status='cancelled', updated_at=NOW() WHERE id=$1`, [req.params.id]);
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({ to: b.customer_email, subject: 'House Lease Cancelled — Orlando Superhost', html: buildCancelEmail(b, cancellationReason, cancellationNotes, eligibleForRefund, refunded) })
       .catch(e => console.error('[EMAIL] hb-cancel:', e.message));
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `[Admin Cancelled] House Lease #${b.id} — ${b.customer_full_name}`, html: buildAdminActionEmail('Cancelled', b) })
       .catch(e => console.error('[EMAIL] hb-admin-cancel:', e.message));
 
@@ -140,8 +144,10 @@ router.put('/house-bookings/:id/move-in', async (req, res) => {
 
     await db.query(`UPDATE house_bookings SET status='active', updated_at=NOW() WHERE id=$1`, [req.params.id]);
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({ to: b.customer_email, subject: 'Welcome Home! You Are Moved In 🏠 — Orlando Superhost', html: buildMoveInEmail(b) })
       .catch(e => console.error('[EMAIL] hb-movein:', e.message));
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `Tenant Moved In — Booking #${b.id}`, html: buildAdminActionEmail('Moved In', b) })
       .catch(e => console.error('[EMAIL] hb-admin-movein:', e.message));
 
@@ -228,8 +234,10 @@ router.post('/house-bookings/:id/move-out', async (req, res) => {
     );
     const b2 = updated.rows[0];
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({ to: b.customer_email, subject: 'Move-Out Complete — Orlando Superhost', html: buildMoveOutEmail(b2) })
       .catch(e => console.error('[EMAIL] hb-moveout:', e.message));
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `Tenant Moved Out — Booking #${b.id}`, html: buildAdminActionEmail('Moved Out', b2) })
       .catch(e => console.error('[EMAIL] hb-admin-moveout:', e.message));
 

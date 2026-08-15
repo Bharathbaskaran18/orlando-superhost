@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { sendEmail } = require('./utils/resendEmail');
 const { startAgreementTimerJob } = require('./jobs/agreementTimer');
 const { startHouseCheckinJob }   = require('./jobs/houseCheckinJob');
 const { startHousePaymentReminderJob } = require('./jobs/housePaymentReminderJob');
@@ -36,6 +37,16 @@ app.listen(PORT, async () => {
   console.log('Stripe key exists:', !!process.env.STRIPE_SECRET_KEY);
   console.log('Stripe key prefix:', process.env.STRIPE_SECRET_KEY?.substring(0, 12));
   console.log('[RESEND] configured:', !!process.env.RESEND_API_KEY);
+  console.log('[RESEND] key prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 6) : '(not set)');
+
+  // ── Startup diagnostic: confirm Resend can actually deliver an email ──
+  sendEmail({
+    to: 'orlandosuperhost@gmail.com',
+    subject: 'Test Email from Orlando Superhost',
+    html: '<h1>Email is working!</h1>',
+  }).then(r => console.log('[TEST EMAIL] Result:', r))
+    .catch(e => console.error('[TEST EMAIL] Error:', e.message));
+
   startAgreementTimerJob();
   startHouseCheckinJob();
   startHousePaymentReminderJob();

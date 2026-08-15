@@ -127,6 +127,7 @@ router.post('/register', async (req, res) => {
     console.log(`[AUTH] Account created: ${email} (userId=${user.id}, customerId=${customerId})`);
 
     // Send welcome email (non-blocking)
+    console.log('[EMAIL TRIGGER] Sending welcome email to:', email);
     sendEmail({
       to: email,
       subject: 'Welcome to Orlando Superhost! 🌴',
@@ -206,6 +207,7 @@ router.post('/resend-otp', async (req, res) => {
     await db.query('UPDATE users SET otp_code=$1, otp_expires_at=$2 WHERE id=$3', [otp, expiresAt, userId]);
 
     console.log(`[AUTH] Resend OTP ${otp} to ${user.email} (userId=${userId})`);
+    console.log('[EMAIL TRIGGER] Sending email to:', user.email);
     sendEmail({ to: user.email, subject: 'Your new Orlando Superhost verification code', html: buildOtpEmailHtml(user.name, otp) })
       .catch(err => console.error('[AUTH] Resend OTP email failed:', err.message));
 

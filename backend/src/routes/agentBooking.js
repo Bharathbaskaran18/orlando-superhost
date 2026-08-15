@@ -184,12 +184,14 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
     const agent = agentRes.rows[0];
 
     if (agent) {
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({
         to: booking.customer_email,
         subject: 'Agent Booking Received! 🧭 — Orlando Superhost',
         html: buildConfirmEmail(booking, agent),
       }).catch(e => console.error('[EMAIL] ag-confirm:', e.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
       sendEmail({
         to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
         subject: `New Agent Booking #${booking.id} — ${booking.customer_full_name}`,
@@ -265,12 +267,14 @@ router.delete('/bookings/:id', authenticateToken, async (req, res) => {
       [req.params.id]
     );
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({
       to: b.customer_email,
       subject: `Agent Booking Cancelled — ${b.agent_name} (#${b.id})`,
       html: buildCustomerCancelEmail(b),
     }).catch(e => console.error('[EMAIL] ag-customer-cancel:', e.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
     sendEmail({
       to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Cancelled Agent Booking #${b.id} — ${b.customer_full_name}`,

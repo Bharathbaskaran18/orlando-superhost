@@ -234,6 +234,7 @@ async function runAgreementTimerJob() {
       console.log(`[JOB] Auto-cancelled booking #${booking.id} (agreement not signed within 24h)`);
 
       // Email customer
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({
         to: booking.customer_email,
         subject: `Booking Cancelled — Agreement Not Signed (#${booking.id})`,
@@ -241,6 +242,7 @@ async function runAgreementTimerJob() {
       }).catch(err => console.error(`[JOB] Customer cancel email failed for #${booking.id}:`, err.message));
 
       // Email admin
+      console.log('[EMAIL TRIGGER] Sending email to:', ADMIN_EMAIL);
       sendEmail({
         to: ADMIN_EMAIL,
         subject: `Auto-Cancelled Booking #${booking.id} — Agreement Not Signed`,
@@ -260,6 +262,7 @@ async function runAgreementTimerJob() {
     );
 
     for (const booking of needReminder.rows) {
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({
         to: booking.customer_email,
         subject: `⚠️ Action Required — Sign Your Rental Agreement (#${booking.id})`,

@@ -80,12 +80,14 @@ router.put('/agent-bookings/:id/approve', async (req, res) => {
 
     await db.query(`UPDATE agent_bookings SET status='approved', updated_at=NOW() WHERE id=$1`, [req.params.id]);
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({
       to: b.customer_email,
       subject: 'Your Agent Booking is Confirmed! 🧭 — Orlando Superhost',
       html: buildApprovalEmail(b),
     }).catch(e => console.error('[EMAIL] ag-approve:', e.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({
       to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `Agent Booking #${b.id} Approved`,
@@ -120,12 +122,14 @@ router.put('/agent-bookings/:id/cancel', async (req, res) => {
       [cancellationReason || null, req.params.id]
     );
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({
       to: b.customer_email,
       subject: 'Agent Booking Cancelled — Orlando Superhost',
       html: buildCancelEmail(b, cancellationReason),
     }).catch(e => console.error('[EMAIL] ag-cancel:', e.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({
       to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `[Admin Cancelled] Agent Booking #${b.id} — ${b.customer_full_name}`,
@@ -154,12 +158,14 @@ router.put('/agent-bookings/:id/complete', async (req, res) => {
 
     await db.query(`UPDATE agent_bookings SET status='completed', updated_at=NOW() WHERE id=$1`, [req.params.id]);
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({
       to: b.customer_email,
       subject: 'Your Agent Session is Complete! 🧭 — Orlando Superhost',
       html: buildCompleteEmail(b),
     }).catch(e => console.error('[EMAIL] ag-complete:', e.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
     sendEmail({
       to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `Agent Session Completed — Booking #${b.id} — ${b.customer_full_name}`,

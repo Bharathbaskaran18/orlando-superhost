@@ -295,8 +295,10 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
     const hRes = await db.query('SELECT * FROM houses WHERE id = $1', [booking.house_id]);
     const house = hRes.rows[0];
     if (house) {
+      console.log('[EMAIL TRIGGER] Sending email to:', booking.customer_email);
       sendEmail({ to: booking.customer_email, subject: 'Lease Confirmed! 🏠 Orlando Superhost', html: buildConfirmEmail(booking, house) })
         .catch(e => console.error('[EMAIL] hb-confirm:', e.message));
+      console.log('[EMAIL TRIGGER] Sending email to:', (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'));
       sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `New House Lease #${booking.id} — ${booking.customer_full_name}`, html: buildAdminNewEmail(booking, house) })
         .catch(e => console.error('[EMAIL] hb-admin-new:', e.message));
     }
@@ -341,12 +343,14 @@ router.delete('/bookings/:id', authenticateToken, async (req, res) => {
       [req.params.id]
     );
 
+    console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
     sendEmail({
       to: b.customer_email,
       subject: `Lease Cancelled — ${b.house_name} (#${b.id})`,
       html: buildCustomerCancelEmail(b, eligibleForRefund, refunded),
     }).catch(e => console.error('[EMAIL] hb-customer-cancel:', e.message));
 
+    console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
     sendEmail({
       to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Cancelled House Lease #${b.id} — ${b.customer_full_name}`,

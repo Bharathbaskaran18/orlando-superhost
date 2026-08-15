@@ -109,6 +109,7 @@ router.post('/applications', authenticateToken, async (req, res) => {
     const propRes = await db.query('SELECT * FROM lease_properties WHERE id = $1', [propertyId]);
     const prop = propRes.rows[0];
     if (prop) {
+      console.log('[EMAIL TRIGGER] Sending email to:', email);
       sendEmail({
         to: email,
         subject: `Lease Application Received — ${prop.title} (#${app.id})`,
@@ -127,6 +128,7 @@ router.post('/applications', authenticateToken, async (req, res) => {
 <div class="ib">📋 <strong>What's next?</strong><br>Our team will review your application within 1–2 business days. If approved, you'll be asked to submit additional documentation (Step 2).</div>`),
       }).catch(e => console.error('[EMAIL] lease-step1-customer:', e.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
       sendEmail({
         to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Lease Application #${app.id} — ${fullName} — ${prop.title}`,
@@ -264,6 +266,7 @@ router.post(
       const propRes = await db.query('SELECT * FROM lease_properties WHERE id = $1', [app.property_id]);
       const prop = propRes.rows[0];
       if (prop) {
+        console.log('[EMAIL TRIGGER] Sending email to:', app.email);
         sendEmail({
           to: app.email,
           subject: `Step 2 Documents Received — ${prop.title} (#${app.id})`,
@@ -278,6 +281,7 @@ router.post(
 <div class="ib">📋 <strong>What's next?</strong><br>Our team will review your documents and reach out within 1–2 business days. If approved, you'll be invited to schedule a viewing appointment.</div>`),
         }).catch(e => console.error('[EMAIL] lease-step2-customer:', e.message));
 
+        console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
         sendEmail({
           to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Step 2 Submitted — Application #${app.id} — ${app.full_name}`,
@@ -337,6 +341,7 @@ router.post('/applications/:id/appointment', authenticateToken, async (req, res)
     const propRes = await db.query('SELECT * FROM lease_properties WHERE id = $1', [app.property_id]);
     const prop = propRes.rows[0];
     if (prop) {
+      console.log('[EMAIL TRIGGER] Sending email to:', app.email);
       sendEmail({
         to: app.email,
         subject: `Viewing Appointment Requested — ${prop.title} (#${app.id})`,
@@ -349,6 +354,7 @@ router.post('/applications/:id/appointment', authenticateToken, async (req, res)
 <div class="ib">📋 <strong>What's next?</strong><br>Our team will confirm your appointment or suggest an alternative time within 1 business day.</div>`),
       }).catch(e => console.error('[EMAIL] lease-appt-customer:', e.message));
 
+      console.log('[EMAIL TRIGGER] Sending email to:', process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com');
       sendEmail({
         to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `Viewing Appointment Requested — Application #${app.id} — ${app.full_name}`,

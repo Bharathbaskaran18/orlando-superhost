@@ -73,12 +73,14 @@ async function runHousePaymentReminderJob() {
         changed = true;
         sentCount++;
 
+        console.log('[EMAIL TRIGGER] Sending email to:', b.customer_email);
         sendEmail({
           to: b.customer_email,
           subject: `Reminder: Rent Payment Due ${fmtDate(entry.dueDate)} — Orlando Superhost`,
           html: buildReminderEmail(b, entry),
         }).catch(err => console.error(`[JOB] Payment reminder email failed for #${b.id}:`, err.message));
 
+        console.log('[EMAIL TRIGGER] Sending email to:', ADMIN_EMAIL);
         sendEmail({
           to: ADMIN_EMAIL,
           subject: `Payment Reminder Sent — Booking #${b.id}`,
