@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const FROM = 'Orlando Superhost <onboarding@resend.dev>';
+const FROM = 'Orlando Superhost <noreply@orlandosuperhost.com>';
 
 const sendEmail = async ({ to, subject, html, attachments }) => {
   if (!resend) {
