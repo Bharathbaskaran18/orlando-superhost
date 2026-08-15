@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate } = require('../utils/dateHelper');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const router = express.Router();
@@ -297,7 +297,7 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
     if (house) {
       sendEmail({ to: booking.customer_email, subject: 'Lease Confirmed! 🏠 Orlando Superhost', html: buildConfirmEmail(booking, house) })
         .catch(e => console.error('[EMAIL] hb-confirm:', e.message));
-      sendEmail({ to: process.env.SMTP_USER, subject: `New House Lease #${booking.id} — ${booking.customer_full_name}`, html: buildAdminNewEmail(booking, house) })
+      sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `New House Lease #${booking.id} — ${booking.customer_full_name}`, html: buildAdminNewEmail(booking, house) })
         .catch(e => console.error('[EMAIL] hb-admin-new:', e.message));
     }
 
@@ -348,7 +348,7 @@ router.delete('/bookings/:id', authenticateToken, async (req, res) => {
     }).catch(e => console.error('[EMAIL] hb-customer-cancel:', e.message));
 
     sendEmail({
-      to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+      to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Cancelled House Lease #${b.id} — ${b.customer_full_name}`,
       html: buildAdminCancelNotifEmail(b),
     }).catch(e => console.error('[EMAIL] hb-admin-cancel-notif:', e.message));

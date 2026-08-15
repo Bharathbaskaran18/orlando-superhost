@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate } = require('../utils/dateHelper');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com';

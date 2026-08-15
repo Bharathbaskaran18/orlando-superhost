@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate, formatTime } = require('../utils/dateHelper');
 const router = express.Router();
 
@@ -128,7 +128,7 @@ router.post('/applications', authenticateToken, async (req, res) => {
       }).catch(e => console.error('[EMAIL] lease-step1-customer:', e.message));
 
       sendEmail({
-        to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+        to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Lease Application #${app.id} — ${fullName} — ${prop.title}`,
         html: leasingLayout('New Lease Application', `
 <p>A new lease application has been submitted.</p>
@@ -279,7 +279,7 @@ router.post(
         }).catch(e => console.error('[EMAIL] lease-step2-customer:', e.message));
 
         sendEmail({
-          to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+          to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Step 2 Submitted — Application #${app.id} — ${app.full_name}`,
           html: leasingLayout('Lease Application Step 2', `
 <p>An applicant has submitted their Step 2 documents.</p>
@@ -350,7 +350,7 @@ router.post('/applications/:id/appointment', authenticateToken, async (req, res)
       }).catch(e => console.error('[EMAIL] lease-appt-customer:', e.message));
 
       sendEmail({
-        to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+        to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `Viewing Appointment Requested — Application #${app.id} — ${app.full_name}`,
         html: leasingLayout('New Viewing Appointment Request', `
 <p>An applicant has requested a viewing appointment.</p>

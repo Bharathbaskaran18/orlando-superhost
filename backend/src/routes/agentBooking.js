@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate, formatTime } = require('../utils/dateHelper');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const router = express.Router();
@@ -191,7 +191,7 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
       }).catch(e => console.error('[EMAIL] ag-confirm:', e.message));
 
       sendEmail({
-        to: process.env.SMTP_USER,
+        to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
         subject: `New Agent Booking #${booking.id} — ${booking.customer_full_name}`,
         html: buildAdminNewEmail(booking, agent),
       }).catch(e => console.error('[EMAIL] ag-admin-new:', e.message));
@@ -272,7 +272,7 @@ router.delete('/bookings/:id', authenticateToken, async (req, res) => {
     }).catch(e => console.error('[EMAIL] ag-customer-cancel:', e.message));
 
     sendEmail({
-      to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+      to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Cancelled Agent Booking #${b.id} — ${b.customer_full_name}`,
       html: buildAdminCancelNotifEmail(b),
     }).catch(e => console.error('[EMAIL] ag-admin-cancel-notif:', e.message));

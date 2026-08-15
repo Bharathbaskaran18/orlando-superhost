@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { verifySmtpConnection } = require('./utils/email');
 const { startAgreementTimerJob } = require('./jobs/agreementTimer');
 const { startHouseCheckinJob }   = require('./jobs/houseCheckinJob');
 const { startHousePaymentReminderJob } = require('./jobs/housePaymentReminderJob');
@@ -36,7 +35,7 @@ app.listen(PORT, async () => {
   console.log(`Orlando Superhost server running on port ${PORT}`);
   console.log('Stripe key exists:', !!process.env.STRIPE_SECRET_KEY);
   console.log('Stripe key prefix:', process.env.STRIPE_SECRET_KEY?.substring(0, 12));
-  await verifySmtpConnection();
+  console.log('[RESEND] configured:', !!process.env.RESEND_API_KEY);
   startAgreementTimerJob();
   startHouseCheckinJob();
   startHousePaymentReminderJob();

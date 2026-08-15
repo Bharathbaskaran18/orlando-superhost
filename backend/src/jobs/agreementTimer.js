@@ -1,5 +1,5 @@
 const db = require('../db');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';

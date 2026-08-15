@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate } = require('../utils/dateHelper');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const router = express.Router();
@@ -73,7 +73,7 @@ router.put('/house-bookings/:id/approve', async (req, res) => {
 
     sendEmail({ to: b.customer_email, subject: 'Your Lease is Confirmed! ✅ Orlando Superhost', html: buildApprovalEmail(b) })
       .catch(e => console.error('[EMAIL] hb-approve:', e.message));
-    sendEmail({ to: process.env.SMTP_USER, subject: `House Lease #${b.id} Approved`, html: buildAdminActionEmail('Approved', b) })
+    sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `House Lease #${b.id} Approved`, html: buildAdminActionEmail('Approved', b) })
       .catch(e => console.error('[EMAIL] hb-admin-approve:', e.message));
 
     res.json({ message: 'Approved' });
@@ -115,7 +115,7 @@ router.put('/house-bookings/:id/cancel', async (req, res) => {
 
     sendEmail({ to: b.customer_email, subject: 'House Lease Cancelled — Orlando Superhost', html: buildCancelEmail(b, cancellationReason, cancellationNotes, eligibleForRefund, refunded) })
       .catch(e => console.error('[EMAIL] hb-cancel:', e.message));
-    sendEmail({ to: process.env.SMTP_USER, subject: `[Admin Cancelled] House Lease #${b.id} — ${b.customer_full_name}`, html: buildAdminActionEmail('Cancelled', b) })
+    sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `[Admin Cancelled] House Lease #${b.id} — ${b.customer_full_name}`, html: buildAdminActionEmail('Cancelled', b) })
       .catch(e => console.error('[EMAIL] hb-admin-cancel:', e.message));
 
     res.json({ message: 'Cancelled' });
@@ -142,7 +142,7 @@ router.put('/house-bookings/:id/move-in', async (req, res) => {
 
     sendEmail({ to: b.customer_email, subject: 'Welcome Home! You Are Moved In 🏠 — Orlando Superhost', html: buildMoveInEmail(b) })
       .catch(e => console.error('[EMAIL] hb-movein:', e.message));
-    sendEmail({ to: process.env.SMTP_USER, subject: `Tenant Moved In — Booking #${b.id}`, html: buildAdminActionEmail('Moved In', b) })
+    sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `Tenant Moved In — Booking #${b.id}`, html: buildAdminActionEmail('Moved In', b) })
       .catch(e => console.error('[EMAIL] hb-admin-movein:', e.message));
 
     res.json({ message: 'Moved in' });
@@ -230,7 +230,7 @@ router.post('/house-bookings/:id/move-out', async (req, res) => {
 
     sendEmail({ to: b.customer_email, subject: 'Move-Out Complete — Orlando Superhost', html: buildMoveOutEmail(b2) })
       .catch(e => console.error('[EMAIL] hb-moveout:', e.message));
-    sendEmail({ to: process.env.SMTP_USER, subject: `Tenant Moved Out — Booking #${b.id}`, html: buildAdminActionEmail('Moved Out', b2) })
+    sendEmail({ to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'), subject: `Tenant Moved Out — Booking #${b.id}`, html: buildAdminActionEmail('Moved Out', b2) })
       .catch(e => console.error('[EMAIL] hb-admin-moveout:', e.message));
 
     res.json(b2);

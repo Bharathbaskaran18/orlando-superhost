@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate, formatTime } = require('../utils/dateHelper');
 const router = express.Router();
 
@@ -211,7 +211,7 @@ router.put('/leasing/applications/:id/status', async (req, res) => {
         sendEmail({ to: app.email, subject: emailCfg.subject, html: emailCfg.html })
           .catch(e => console.error(`[EMAIL] lease-status-${status}:`, e.message));
         sendEmail({
-          to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+          to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `[Admin] ${emailCfg.adminSubject}`,
           html: leasingLayout(`Lease Application — ${status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`, `
 <p>Status updated for Application <strong>#${app.id}</strong>.</p>
@@ -370,7 +370,7 @@ ${adminNote ? `<div class="st">Notes</div><div class="ib">${adminNote}</div>` : 
 <div class="ib">Questions? Email us at <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-confirm-customer:', e.message));
         sendEmail({
-          to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+          to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Confirmed — ${apptCtx.full_name} — ${fmtDate(cfDate)}`,
           html: leasingLayout('Appointment Confirmed', `
 <p>Viewing appointment confirmed.</p>
@@ -405,7 +405,7 @@ ${adminNote ? `<div class="st">Reason / Notes</div><div class="wb">${adminNote}<
 <div class="ib">Please confirm your availability. If you have questions, email us at <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-reschedule-customer:', e.message));
         sendEmail({
-          to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+          to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Rescheduled — ${apptCtx.full_name} — ${fmtDate(confirmedDate)}`,
           html: leasingLayout('Appointment Rescheduled', `
 <p>You rescheduled a viewing appointment.</p>
@@ -436,7 +436,7 @@ ${adminNote ? `<div class="st">Reason</div><div class="rb">${adminNote}</div>` :
 <div class="ib">Please contact us to reschedule or for more information: <strong>support@orlandosuperhost.com</strong>.</div>`),
         }).catch(e => console.error('[EMAIL] lease-appt-cancel-customer:', e.message));
         sendEmail({
-          to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+          to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
           subject: `Appointment Cancelled — ${apptCtx.full_name} — ${apptCtx.property_title}`,
           html: leasingLayout('Appointment Cancelled', `
 <p>You cancelled a viewing appointment.</p>

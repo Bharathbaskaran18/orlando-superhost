@@ -6,7 +6,7 @@ const multer = require('multer');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { generateRentalAgreement, addAdminSignature } = require('../utils/pdfFill');
 const { formatDate, formatTime } = require('../utils/dateHelper');
 const router = express.Router();
@@ -381,7 +381,7 @@ router.put('/car-rental/bookings/:id/cancel', async (req, res) => {
     }).catch(err => console.error('[EMAIL] Admin cancel email failed:', err.message));
 
     sendEmail({
-      to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+      to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `[Admin Cancelled] Car Rental #${booking.id} — ${booking.customer_full_name}`,
       html: buildAdminCancelSelfCopyEmail(booking),
     }).catch(err => console.error('[EMAIL] Admin cancel self-copy failed:', err.message));
@@ -864,7 +864,7 @@ router.put('/car-rental/bookings/:id/process-return', async (req, res) => {
     }
 
     sendEmail({
-      to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+      to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Car Returned — Booking #${req.params.id} — ${booking.year} ${booking.make} ${booking.model}`,
       html: buildAdminReturnEmail(emailData),
     }).catch(err => console.error('[EMAIL] Admin return notification failed:', err.message));

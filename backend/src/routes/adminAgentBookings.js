@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { formatDate, formatTime } = require('../utils/dateHelper');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const router = express.Router();
@@ -87,7 +87,7 @@ router.put('/agent-bookings/:id/approve', async (req, res) => {
     }).catch(e => console.error('[EMAIL] ag-approve:', e.message));
 
     sendEmail({
-      to: process.env.SMTP_USER,
+      to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `Agent Booking #${b.id} Approved`,
       html: buildAdminActionEmail('Approved', b),
     }).catch(e => console.error('[EMAIL] ag-admin-approve:', e.message));
@@ -127,7 +127,7 @@ router.put('/agent-bookings/:id/cancel', async (req, res) => {
     }).catch(e => console.error('[EMAIL] ag-cancel:', e.message));
 
     sendEmail({
-      to: process.env.SMTP_USER,
+      to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `[Admin Cancelled] Agent Booking #${b.id} — ${b.customer_full_name}`,
       html: buildAdminActionEmail('Cancelled', b),
     }).catch(e => console.error('[EMAIL] ag-admin-cancel:', e.message));
@@ -161,7 +161,7 @@ router.put('/agent-bookings/:id/complete', async (req, res) => {
     }).catch(e => console.error('[EMAIL] ag-complete:', e.message));
 
     sendEmail({
-      to: process.env.SMTP_USER,
+      to: (process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com'),
       subject: `Agent Session Completed — Booking #${b.id} — ${b.customer_full_name}`,
       html: buildAdminActionEmail('Completed', b),
     }).catch(e => console.error('[EMAIL] ag-admin-complete:', e.message));

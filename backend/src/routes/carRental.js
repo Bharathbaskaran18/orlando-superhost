@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { sendEmail } = require('../utils/email');
+const { sendEmail } = require('../utils/resendEmail');
 const { addCustomerSignature } = require('../utils/pdfFill');
 const { formatDate } = require('../utils/dateHelper');
 const router = express.Router();
@@ -319,7 +319,7 @@ router.post('/bookings/:id/confirm-payment', authenticateToken, async (req, res)
       }).catch(err => console.error(`[CUSTOMER EMAIL] FAILED for booking #${booking.id}:`, err.message));
 
       sendEmail({
-        to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+        to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Car Rental Booking #${booking.id} — ${booking.customer_full_name}`,
         html: buildAdminNewBookingEmail(booking),
       }).catch(err => console.error(`[EMAIL] ✗ Admin new-booking FAILED for booking #${booking.id}:`, err.message));
@@ -425,7 +425,7 @@ router.post('/bookings/:id/test-confirm', authenticateToken, async (req, res) =>
       }).catch(err => console.error(`[CUSTOMER EMAIL] FAILED for booking #${booking.id}:`, err.message));
 
       sendEmail({
-        to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+        to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
         subject: `New Car Rental Booking #${booking.id} — ${booking.customer_full_name}`,
         html: buildAdminNewBookingEmail(booking),
       }).catch(err => console.error(`[EMAIL] ✗ Admin new-booking FAILED for booking #${booking.id}:`, err.message));
@@ -476,7 +476,7 @@ router.post('/bookings/:id/sign', authenticateToken, async (req, res) => {
     );
 
     sendEmail({
-      to: process.env.SMTP_USER || 'orlandosuperhost@gmail.com',
+      to: process.env.ADMIN_EMAIL || 'orlandosuperhost@gmail.com',
       subject: `Customer Signed Agreement — Car Rental #${req.params.id} — ${crb.rows[0].customer_full_name}`,
       html: buildAdminSignedEmail(crb.rows[0], signatureName.trim()),
     }).catch(err => console.error('[EMAIL] Admin sign notification failed:', err.message));

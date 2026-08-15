@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { sendEmail, verifySmtpConnection } = require('../utils/email');
+const { sendEmail, verifySmtpConnection } = require('../utils/resendEmail');
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -500,17 +500,17 @@ router.put('/bookings/:id/cancel', async (req, res) => {
 // ─── TEST EMAIL ───────────────────────────────────────────────────────────────
 
 router.post('/test-email', async (req, res) => {
-  const to = req.body.to || process.env.SMTP_USER;
-  if (!to) return res.status(400).json({ error: 'Provide a "to" email address or set SMTP_USER in .env' });
+  const to = req.body.to || process.env.ADMIN_EMAIL;
+  if (!to) return res.status(400).json({ error: 'Provide a "to" email address or set ADMIN_EMAIL in .env' });
 
   console.log(`[EMAIL] Admin triggered test email → ${to}`);
 
-  const smtpOk = await verifySmtpConnection();
-  if (!smtpOk) {
+  const resendOk = await verifySmtpConnection();
+  if (!resendOk) {
     return res.status(503).json({
       status: 'not_configured',
-      message: 'SMTP connection failed or not configured. Check backend terminal for details.',
-      fix: 'Set SMTP_PASS to a Gmail App Password in backend/.env, then restart the server. Generate one at https://myaccount.google.com/apppasswords',
+      message: 'Resend is not configured. Check backend terminal for details.',
+      fix: 'Set RESEND_API_KEY in backend/.env (or your Railway environment), then restart the server. Get a key at https://resend.com/api-keys',
     });
   }
 
@@ -530,8 +530,8 @@ router.post('/test-email', async (req, res) => {
     if (result?.skipped) {
       return res.json({
         status: 'skipped',
-        message: 'Email skipped — SMTP_PASS is still the placeholder value in backend/.env',
-        fix: 'Replace SMTP_PASS=your-gmail-app-password-here with your actual Gmail App Password and restart the server.',
+        message: 'Email skipped — RESEND_API_KEY is not set in backend/.env',
+        fix: 'Set RESEND_API_KEY=<your-resend-api-key> and restart the server.',
       });
     }
 
